@@ -223,6 +223,34 @@ class Basiin{
     }
 
     /**
+     *  Find a view file from the views available to this controller
+     *
+     * will check for files prioritizing an exact match > a minified js > js
+     * if no hit the $fail value will be returned
+     * @param CController $controller
+     * @param string $file
+     * @param mixed $fail
+     * @return mixed
+     */
+    public static function findViewFile($controller, $file, $fail = null){
+        $absFile = $controller->getViewPath().'/'.$file;
+        if (!file_exists($absFile)){ //if the passed filename isn;t valid
+            if (file_exists($absFile.'.min.js')){ //prioritize min files
+                $absFile = $absFile.'.min.js';
+            }elseif (file_exists($absFile.'.js')){ //settle for normal
+                $absFile = $absFile.'.js';
+            }elseif($fail === TRUE){
+                //TODO: error handling
+                throw new CHttpException (404, "the view file $file does not exist", 007);
+                return false;
+            }else
+                return $fail;
+        }
+
+        return $absFile;
+    }
+
+    /**
      *  Renders a Basiin view file
      *
      * Outputs a basiin view file while automatically replacing all
@@ -238,34 +266,32 @@ class Basiin{
      * @return mixed
      */
     public static function renderFile($file, $controller, $data = NULL, $returnOutput = FALSE, $stopOnError = FALSE){
+
+        $absFile = self::findViewFile($controller, $file, TRUE);
         
-        $absFile = $controller->getViewPath().'/'.$file;
-        if (!file_exists($absFile)){ //if the passed filename isn;t valid
-            if (file_exists($absFile.'.min.js')){ //prioritize min files
-                $absFile = $absFile.'.min.js';
-            }elseif (file_exists($absFile.'.js')){ //settle for normal
-                $absFile = $absFile.'.js';
-            }else{ // die otherwise
-                //TODO: error handling
-                throw new CHttpException (404, "the view file $file does not exist", 007);
-                return false;
-            }
-        }
-        
-        $product = $controller->renderFile($absFile, NULL, TRUE);
+        $output = $controller->renderFile($absFile, NULL, TRUE);
 
         //NOTE: to use $var in render files you have to precede it by whitespace
         //even if it is doubleqouted
+        //match files
+        $regexp = '/\s"?\$__([[:alnum:]]+)"?/';
+        preg_match_all($regexp, $output, $files);
+        foreach ($files[1] as $filee){
+            $absFile = self::findViewFile($controller, $controller->id.'.'.$filee, FALSE);
+            if ($absFile)
+                $output = str_replace ('$__'.$filee, file_get_contents ($absFile), $output);
+        }
+        
         //match $word__prop to data[$word]->prop
         $regexp = '/\s"?(\$[[:alnum:]]+__[[:alnum:]]+)"?/';
-        preg_match_all($regexp, $product, $objects);
+        preg_match_all($regexp, $output, $objects);
         
         //match $word to data[$word]
         $regexp = '/\s"?(\$[[:alnum:]]+)"?(?:[^[:alnum:]_\-\.])/';
         ////ends @ - also, should be ok since hyphen chars are not allowed in js vars
-        preg_match_all($regexp, $product, $vars);
+        preg_match_all($regexp, $output, $vars);
 
-        $output = $product;
+        
         $output = self::replaceRenderedObjects( $output, $data, $objects[1], $stopOnError );
         $output = self::replaceRenderedVars($output, $data, $vars[1], $stopOnError );
         
