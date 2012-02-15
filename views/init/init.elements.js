@@ -17,7 +17,7 @@ _elements = {
 
             var eFunc = function(){
                 if(debug) console.log('"onLoad" removing a script'+sc.src);
-                if ( !debug ) sc.parentNode.removeChild(sc);
+                if ( debug ) sc.parentNode.removeChild(sc);
                 if ( onLoad ) onLoad();
             };
 
@@ -31,6 +31,10 @@ _elements = {
             }
             return sc;
         },
+
+        /**
+         * Remove the HTML element of a loaded script
+         */
         'removeScript': function(sc){
             if ( !debug ) {
                 if(debug) console.log('removing script: ' + sc.getAttribute('src'))
@@ -40,6 +44,8 @@ _elements = {
             }
             return true;
         },
+
+
         'removeSelf': function(){ //deprecated?
             var scripts = document.getElementsByTagName('script');
 

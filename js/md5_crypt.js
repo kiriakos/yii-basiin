@@ -54,8 +54,9 @@ function md5_crypt(key, salt) {
 		key = VarType.toStr(key);
 		salt = VarType.toStr(salt);
 	}
-    if(b64pad == undefined) b64pad = "";
-    
+	
+    if(b64pad == undefined) var b64pad = ""; //fix for execution error
+    if(chrsz == undefined) var chrsz = ""; //fix for execution error    
 	var old_b64pad = b64pad;
 	b64pad = "";
 	var old_chrsz = chrsz;

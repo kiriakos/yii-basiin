@@ -41,8 +41,7 @@ _loader = {
             for (var i=0; i>_loader.files.length;i++){
                 if (_loader.files[i].tag == tag){
                     files[i].status = 'installed';
-                    if (_elements.removeScript(files[i].element))//why?
-                        _loader.processQueues();
+                    _loader.processQueues();
                 }
             }
         },
