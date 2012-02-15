@@ -16,12 +16,13 @@ _elements = {
             _elements.active++;
 
             var eFunc = function(){
-                if(debug) console.log('"onLoad" removing a script'+sc.src);
-                if ( debug ) sc.parentNode.removeChild(sc);
+                if(debug) console.log('('+_transaction.id+') ' + '"onLoad" would be removing a script'+sc.src);
+                if ( !debug )
+                    sc.parentNode.removeChild(sc);
                 if ( onLoad ) onLoad();
             };
 
-            //WONTWORK: use the returned output for confirmation and
+            
             //tidy up, delete after load
             if (sc.addEventListener)  // W3C DOM
                 sc.addEventListener('load',eFunc,false);
@@ -33,13 +34,13 @@ _elements = {
         },
 
         /**
-         * Remove the HTML element of a loaded script
+         * Remove the passed HTML element
+         * 
          */
-        'removeScript': function(sc){
+        'remove': function(element){
+            if(debug) console.log('('+_transaction.id+') ' + '"_element.remove" would be removing element: ' + element.getAttribute('src'))
             if ( !debug ) {
-                if(debug) console.log('removing script: ' + sc.getAttribute('src'))
-
-                sc.parentNode.removeChild(sc);
+                element.parentNode.removeChild(element);
                 _elements.active--;
             }
             return true;
@@ -48,12 +49,14 @@ _elements = {
 
         'removeSelf': function(){ //deprecated?
             var scripts = document.getElementsByTagName('script');
-
+            var regex = new RegExp(_transaction.server.basiin+'/init');
+            
             for (var i=0; i<scripts.length;i++){
                 var sc = scripts[i];
                 if( sc.getAttribute('src') ){
-                    if (sc.getAttribute('src').search(/basiin\/init/) != -1) {
-                        _elements.removeScript(sc);
+                    
+                    if ( sc.getAttribute('src').search(regex) != -1 ) {
+                        _elements.remove(sc);
                     }
                 }
             }

@@ -17,16 +17,13 @@
              * completion of the transfer you can call some other Basiin command
              * that will use the data simply by getting the data's {tag}
              *
-             * @param tr    A Transfer object
+             * @param tr    A Transfer object. See _loader.Transfer for details
              */
             'transfer':function(tr){
                 //instantiate a new _transfer obj and put it inside the transfers array
-                tr.pieceL = calculatePieceLength(tr.url);
-                var transfer = new Transfer(tr, basiin)
-                while(transfers.hasOwnProperty(transfer.tag)){
-                    transfer.reTag();
-                }
-                eval("this.transfers."+transfer.tag()+"= "+transfer);
+                var transfer = new _loader.Transfer(tr)
+
+                return transfer.enqueue();
             },
             'install': function(tag,file){_install(tag,file)},
 
@@ -45,15 +42,12 @@
             }
         },
 
-        //tell the server something
-        'tell': function(data, url, tag){
-            if (!url) url = __transaction.tell ;
-            if (!tag) tag = this._hash(Math.random());
-            var tr = {}
-            tr.data = data;
-            tr.url = url;
-            tr.tag = tag;
-            this.sender.startTransfer(tr)
+        //tell the server something data, url, tag
+        'tell': function(trstub){
+            if (!trstub.url) trstub.url = _transaction.server.tell ;
+            if (!trstub.tag) trstub.tag = _hash(Math.random());
+            var tr = this.loader.transfer(trstub);
+            return tr;
         },
         'install': function(tag, file){ // wrapper of loader.install()
             this.loader.install({'tag':tag, 'file':file})
@@ -64,14 +58,14 @@
         'init': function (){
             if (!_initialized){ // check w init var
                 _initialized = true;
-                if(debug) console.log('basiin transaction '+_transaction.id+' initializing,')
+                if(debug) console.log('('+_transaction.id+') ' + 'basiin transaction '+_transaction.id+' initializing,')
                 /* init tasks */
                 eval('window.'+_transaction.id+' = this'); //put basiin into global namespace
                 _loader.processQueues();
                 _elements.removeSelf();
-                if(debug) console.log('basiin transaction '+_transaction.id+' init completed,')
+                if(debug) console.log('('+_transaction.id+') ' + 'basiin transaction '+_transaction.id+' init completed,')
             }else{
-                if(debug) console.log('basiin transaction '+_transaction.id+' already initialized,')
+                if(debug) console.log('('+_transaction.id+') ' + 'basiin transaction '+_transaction.id+' already initialized,')
                 return false;
             }
             return this;
