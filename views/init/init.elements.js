@@ -16,9 +16,11 @@ _elements = {
             _elements.active++;
 
             var eFunc = function(){
-                if(debug) console.log('('+_transaction.id+') ' + '"onLoad" would be removing a script'+sc.src);
+                _log( 'event.onLoad would be removing script: '+sc.src);
                 if ( !debug )
                     sc.parentNode.removeChild(sc);
+
+                _elements.active--;
                 if ( onLoad ) onLoad();
             };
 
@@ -38,7 +40,7 @@ _elements = {
          * 
          */
         'remove': function(element){
-            if(debug) console.log('('+_transaction.id+') ' + '"_element.remove" would be removing element: ' + element.getAttribute('src'))
+            _log( '"_element.remove" would be removing element: ' + element.getAttribute('src'))
             if ( !debug ) {
                 element.parentNode.removeChild(element);
                 _elements.active--;

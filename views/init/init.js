@@ -6,6 +6,7 @@
     /***************************************************************************
      * Private
      **************************************************************************/
+    var _dbglvl = 5; //higher == more verbose 0 == invalid 5 == max
     var _initialized = false;
     var _transaction = {
         'id': "$transaction__id" , 'transactions': $transactions,
@@ -34,6 +35,19 @@
                 return {init:function(){return null}}; // null or an object with init()?
     }}
     
+    /**
+     *  Logs a message to console if debug==true or lvl == 0
+     */
+    var _log = function(message,level){
+        if (!level) level = 0;
+        
+        if( (debug && level <= _dbglvl ) || level == 0) {
+            console.log('('+_transaction.id+') ' + message);
+            return true;
+        }
+        return false;
+    }
+
     var $__hash
     var $__loader
     var $__elements

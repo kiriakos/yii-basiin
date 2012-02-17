@@ -19,12 +19,14 @@
  * 
  * @author Kiriakos
  */
-class BTransaction {
+class BTransaction extends BModel{
     protected $id;
-    public $ttl;
-    public $maxTransfers;
-    public $maxElements;
-    protected $started;
+    protected $ttl;
+    protected $maxTransfers;
+    protected $maxElements;
+    protected $started; //when transaction was started
+    protected $timeout; //when transaction will time out
+
     protected $keepAlive = False;
         public function setKeepAlive($b){return ($this->keepAlive = (bool)$b);}
         public function getKeepAlive(){return $this->keepAlive;}
@@ -44,22 +46,14 @@ class BTransaction {
         $this->maxElements = Basiin::MaxConcursiveElements;
     }
     
-    public function __get($name){
-        $getter = 'get'.  ucfirst($name);
-        if(property_exists($this, $name))
-                return $this->$name;
-        if (method_exists($this, $getter))
-                return $this->$getter();
-
-        return NULL;
-    }
+    
 
     /**
      * The path to which to send data to
      * @return string
      */
     public function getDefaultPath(){
-        return Yii::app()->request->hostInfo.'/basiin/tell/'.$this->id.'/';
+        return 'basiin/tell/'.$this->id;
     }
 
     /**
@@ -120,6 +114,33 @@ class BTransaction {
             $result[$tag]= new BTransfer($tag,$transfer);
         }
         return $result;
+    }
+
+    /**
+     *  Returns the transfer with the correct $tag or False
+     * @param string $tag
+     * @return BTransfer false
+     */
+    public function getTransfer($tag){
+        foreach ($this->transfers as $transfer)
+                if ($transfer->tag == $tag) return $transfer;
+
+        return false;
+    }
+
+    /**
+     * Creates a BTransfer with $tag ($data) and appends it to the transaction
+     * @param string $tag
+     * @param string $data
+     * @return BTransfer
+     */
+    public function newTransfer($tag){
+        
+        $transfer = new BTransfer($tag);
+        
+        $this->transfers[] =$transfer;
+
+        return $transfer;
     }
 }
 ?>

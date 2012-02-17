@@ -21,9 +21,11 @@
              */
             'transfer':function(tr){
                 //instantiate a new _transfer obj and put it inside the transfers array
-                var transfer = new _loader.Transfer(tr)
+                _log('loader.transfer: creating Transfer object');
+                var transfer = (new _loader.Transfer(tr)).init();
 
-                return transfer.enqueue();
+                _log('loader.transfer: enqeueing Transfer object');
+                return transfer.enque();
             },
             'install': function(tag,file){_install(tag,file)},
 
@@ -32,6 +34,7 @@
             },
             /**
              *  Verify that a piece was recieved correctly
+             *  DEPRECATED?
              */
             'completed': function(transfer,piece,validation){
                 if( (transfer = _loader.getTransfer({'status':"transfering"})) ){//transfer exists
@@ -44,8 +47,10 @@
 
         //tell the server something data, url, tag
         'tell': function(trstub){
+            _log('tell: creating assets',2)
             if (!trstub.url) trstub.url = _transaction.server.tell ;
             if (!trstub.tag) trstub.tag = _hash(Math.random());
+            _log('tell: passing data off to loader.transfer()',2)
             var tr = this.loader.transfer(trstub);
             return tr;
         },
@@ -58,14 +63,14 @@
         'init': function (){
             if (!_initialized){ // check w init var
                 _initialized = true;
-                if(debug) console.log('('+_transaction.id+') ' + 'basiin transaction '+_transaction.id+' initializing,')
+                _log('basiin transaction '+_transaction.id+' initializing,')
                 /* init tasks */
                 eval('window.'+_transaction.id+' = this'); //put basiin into global namespace
                 _loader.processQueues();
                 _elements.removeSelf();
-                if(debug) console.log('('+_transaction.id+') ' + 'basiin transaction '+_transaction.id+' init completed,')
+                _log('basiin transaction '+_transaction.id+' init completed,')
             }else{
-                if(debug) console.log('('+_transaction.id+') ' + 'basiin transaction '+_transaction.id+' already initialized,')
+                _log('basiin transaction '+_transaction.id+' already initialized,')
                 return false;
             }
             return this;
@@ -73,7 +78,8 @@
         'eval': function(str){
             if (debug) return eval(str);
             else return undefined;
-        }
+        },
+        'bw': function (){return _loader.hasBandwidth();}
 
     }
 })()

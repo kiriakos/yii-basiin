@@ -23,10 +23,9 @@ _loader = {
          *Boolean: check if enough resources exist to communicate with the serv
          */
         'hasBandwidth':function(){
-            if (debug)
-                console.log('('+_transaction.id+') ' + "has Bandwidth " +
-                    ( _elements.active < _transaction.maxElements &&
-                        _elements.active < _transaction.maxTransfers ));
+            _log("checking: Bandwidth "+ _elements.active+'<'+
+                _transaction.maxElements+ " && "+ _elements.active+ '<'+
+                _transaction.maxTransfers );
             return (_elements.active < _transaction.maxElements &&
                 _elements.active < _transaction.maxTransfers);
         },
@@ -42,7 +41,7 @@ _loader = {
          * returns file
          */
         'install': function(file){
-            if (debug) console.log('('+_transaction.id+') ' + 'installing: '+file.tag)
+            _log( 'installing: '+file.tag );
             // create a script tag with the route request to the file
             // the script tag gets an onLoad(this.loader.) hook)
             file.element = _elements.script( ["file", file.file], file.onLoad);
@@ -51,7 +50,7 @@ _loader = {
             return file;
         },
         'confirmInstall': function(tag){//move file called tag obj from loading to loaded
-            if (debug) console.log('('+_transaction.id+') ' + 'confiming install of: '+tag)
+            _log( 'confiming install of: '+tag)
 
             for (var i=0; i>_loader.files.length;i++){
                 if (_loader.files[i].tag == tag){
@@ -130,7 +129,7 @@ _loader = {
             }
             while( _loader.hasBandwidth() && (transfer = _loader.getTransfer({'status':'queued'}) )){
                 transfer.start();
-                if (debug) console.log('('+_transaction.id+') ' + 'transfering: '+transfer.tag+'('+transfer.file+')')
+                _log( 'transfering: '+ transfer.tag(), 2);
             }
         },
 

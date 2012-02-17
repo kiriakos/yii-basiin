@@ -1,20 +1,87 @@
 function(tr){
+
+    //generate a tag via _hash and assign it to tr.tag
     var _reTag = function (tr){
         tr.tag = _hash(Math.random());
         return tr;
-    }
-    var getPendingPiece = function(){
-        for (index = 0; index< tr.pieces.length; index++){
-            if (tr.pieceStatus[index] === false){ 
-                tr.pieceStatus[index] = null;
-                return {'index':index,'data':tr.pieces[index]};
+    };
+
+    //generate script packets to send to server
+    var _proceedTransfer = function (){
+        while (_loader.hasBandwidth() && _getPiece({'pending':true}))
+            _sendPiece();
+    };
+
+    //dispatch a piece of data to the server
+    var _sendPiece = function(){
+        if(_state==2){ //while transfer state is in transfering
+                
+                var piece = _getPiece({'pending':true}); // obj{id,data}
+
+                if (piece)
+                    piece.send();
+                else
+                    return false;
+
+                _log( tr.tag + ' sending piece: ' +piece.index);
+                return piece;
             }
+            return false;
+    };
+    //return a piece{index,data} that hasn't been transfered yet
+    var _getPiece = function(obj){
+        for (index = 0; index< tr.pieces.length; index++){
+            var hit = true; var piece = tr.pieces[index];
+            for (var i in obj){
+                 hit = hit && (piece[i] === obj[i] || piece[i] === undefined ||
+                    (typeof piece[i] == 'function' && piece[i]() === obj[i]));
+            }
+            if (hit) return piece;
         }
         return false;
+    };
+
+    //piece prototype:
+    var Piece = function (index,data){
+        var _index  = index;
+        var _data   = data;
+        var _state  = 0;
+        var _element;
+        var _verify = function(){return true;} //TODO: create a data verification mech
+        
+        return {
+            'data':_data,
+            'index':_index,
+            'state': function(){return _state},//0=pending,1=active,2=completed
+            'pending': function(){return (_state==0)}, //return state
+            'transfering': function(){return (_state==1)}, //return state
+            'completed': function(){return (_state==2)}, //return state
+            
+            //verify a piece was sent successfully
+            'complete':function(hash){
+                if(_verify(hash))_state=2;
+                else _state=0;
+                return (_state===2);
+            },
+            
+            'send':function(){
+                _state=1;
+                var that = this;
+                var loadFunc = function(){
+                    _log('loadFunc: piece '+that.index+' successfully sent!')
+                    tr.instance.sentPiece(that.index);
+                }
+
+                _element = _elements.script(
+                    [ 'tell', tr.tag, _index, _data ],
+                    loadFunc
+                );
+            }
+
+        };
     }
-    /**
-     *Initialize the transfer object with default values + args
-     */
+    
+    //Initialize the transfer object with default values + args
     var init = function (tr){
         if (tr.onComplete == undefined) tr.onComplete = false;
         if (!tr.pieceL) tr.pieceL = _loader.calculatePieceLength(tr.url);
@@ -26,19 +93,32 @@ function(tr){
     }
     tr = init(tr);
 
+    //create the pieces array that holds the data packets
     var _regex = new RegExp('.{1,'+ tr.pieceL +'}', 'g'); //regex for datasplit
+    tr.data = encodeURIComponent(tr.data);
     tr.pieces= tr.data.match(_regex);
 
-    tr.pieceStatus = (function(pT){ //returns an array of bool(false)
+    //translate pieces array into array of Piece objects
+    for (var i=0; i<tr.pieces.length;i++){
+        tr.pieces[i]= new Piece(i, tr.pieces[i])
+    }
+
+    //array of statuses descibing the transfer status of each piece in pieces
+    tr.pieceStatus = (function(pT){ 
         var pS = new Array(pT);
         var i = pT;
         while (i--) {pS[i] = false;}
         return pS;
-    })(tr.pieces.length); // when transfer inits all parts are unsent (false)
+    })(tr.pieces.length);
 
+    //state variable and dictionary
     var _states={0:'stopped', 1:'queued', 2:'transfering', 3:'complete'};
-    var _state=1;
+    var _state=0;
 
+    
+    /**
+     *Public Interface
+     */
     return{
         'tag':function(){return tr.tag;},
         'reTag':function(){return _reTag()},
@@ -55,12 +135,16 @@ function(tr){
         'pieceComplete':function(piece, next){
             tr.pieceStatus[piece] = true;
             if (next){
-
+                //TODO: what shoudl next be? a func?
             }
         },
 
         'start': function(){ //Bool: start|resume the transfering of files
-            if (_state == 1){_state = 2;return true;}
+            if (_state == 1){
+                _state = 2;
+                _proceedTransfer();
+                return true;
+            }
             return false;
         },
         'pause': function(){//Bool: pause transfering Transfer
@@ -75,43 +159,48 @@ function(tr){
 
         /**
          *Sends a piece of the available pool to the server
+         *DEPRECATED?
          */
         'sendPiece': function(){
-            if (debug) console.log('('+_transaction.id+') '+ tr.tag + ' sending a piece');
-            var piece = getPendingPiece(); // obj{id,data}
-
-            if (piece)
-                var url = _loader.createURL([ 'tell', tr.tag, piece.index, piece.data ]);
-            else
-                return false;
-
-            var that = this;
-            var loadFunc = function(){
-                that.sentPiece(piece.index);
-            }
-
-            _elements.script(url, loadFunc);
-            return index;
+            return _sendPiece();
         },
 
         'sentPiece': function(index){
-            if (debug) console.log('('+_transaction.id+') '+ tr.tag + ' piece '+index+ ' successfully delivered');
-            tr.pieceStatus[index] = true;
+            _log( tr.tag + ' piece '+index+ ' successfully delivered');
+            
             if (this.completed()){
                 if (tr.onComplete) tr.onComplete(this)
             }
             
         },
 
+        'completed':function(){
+            if (_state != 3){
+                for (var i=0; i<tr.pieces.length; i++){
+                    if (!tr.pieces[i].completed()) return false;
+                }
+                
+                _state=3;
+                return true;
+            }
+            return true;
+        },
+
         /**
          * shift
          */
-        'enqueue': function(){
+        'enque': function(){
             if (_state == 0){
                 _state = 1;
                 _loader.transfers.push(this)
                 _loader.processQueues();
+                _log("Transfer.enque: transfer enqued and awaiting transport")
             }
+            return this;
+        },
+
+        'init':function(){
+            tr.instance = this;
             return this;
         }
     }

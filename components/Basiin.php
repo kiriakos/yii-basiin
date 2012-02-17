@@ -275,13 +275,13 @@ class Basiin{
         //even if it is doubleqouted
         //match files
         $regexp = '/\s"?\$__([[:alnum:]]+)"?/';
-        preg_match_all($regexp, $output, $files);
-        foreach ($files[1] as $filee){
-            $absFile = self::findViewFile($controller, $controller->id.'.'.$filee, FALSE);
-            if ($absFile)
-                $output = str_replace ('$__'.$filee, file_get_contents ($absFile), $output);
+        while (preg_match_all($regexp, $output, $files)){
+            foreach ($files[1] as $filee){
+                $absFile = self::findViewFile($controller, $controller->id.'.'.$filee, FALSE);
+                if ($absFile)
+                    $output = str_replace ('$__'.$filee, file_get_contents ($absFile), $output);
+            }
         }
-        
         //match $word__prop to data[$word]->prop
         $regexp = '/\s"?(\$[[:alnum:]]+__[[:alnum:]]+)"?/';
         preg_match_all($regexp, $output, $objects);

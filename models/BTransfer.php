@@ -9,13 +9,13 @@
  *
  * @author Kiriakos
  */
-class BTransfer {
+class BTransfer extends BModel{
     /**
      *
      * @var string
      */
-    public $tag;
-
+    private $tag;
+    public function getTag(){return $this->tag;}
     /**
      *  Associative array of recieved pieces
      *
@@ -23,8 +23,11 @@ class BTransfer {
      * 
      * @var array
      */
-    public $pieces;
+    private $pieces;
+    private function createPiece($i,$data){
+        $this->pieces[$i] = $data;
 
+        }
 
     /**
      *
@@ -33,6 +36,7 @@ class BTransfer {
      */
     public function  __construct($tag = NULL,$data = NULL) {
 
+        // this should never happen, BTransfer inits are done with $tag
         // these occur on genuine new instantiations
         if ($data === NULL && $tag === NULL) 
             $this->tag = Basiin::generateTransferTag();
