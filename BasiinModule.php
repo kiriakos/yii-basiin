@@ -2,6 +2,9 @@
 
 class BasiinModule extends CWebModule
 {
+
+        public $db;
+        
 	public function init()
 	{
          	// import the module-level models and components

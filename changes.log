@@ -1,0 +1,12 @@
+2012 - 02 - 21
+    BModel.php : deleted protected functions package() & unpack()
+    BPiece.php : DEPRECATED, deleted
+    PieceDB.sql: created basiin_transaction & basiin_transfer tables
+                 applying foreign keys & behaviors
+    PieceDB.sql -> Basiin.db.sql
+    BModel.php : redundant, deleted
+    BTransaction separating db data from data taken directly from the 
+                 Basiin static object
+
+2020 - 02 -21
+    Basiin.db.sql: keep working

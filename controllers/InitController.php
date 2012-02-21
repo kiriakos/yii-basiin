@@ -32,6 +32,9 @@ class InitController extends Controller
             $rendered = Basiin::renderFile('init', $this, array(
                 'transaction'=>$transaction,
                 'transactions'=>$trs,
+                'transfers'=> array(
+                    'maxTransferSize' => Basiin::MaxTransferSize,
+                ),
                 'jsFiles'=>array(
                     array(
                         'tag'=>'jQuery',

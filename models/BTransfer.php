@@ -2,48 +2,63 @@
 /**
  * Object that keeps track of a basiin data transfer
  *
- * @property string $tag
- * @property string[] $pieces
- * @property int $piecesTotal
- * @property int $pieceLength
+ * NOTE: after FEB 12 2012, all transactions and transfers get generated numeric 
+ *       ids from the DB (data/basin.db).
+ *       
+ * after initiating a transfer through:
+ *  Basiin/init/transfer/$transactionId/$DataLength/$maxPieceLength
+ * to which basiin returns:
+ *  js:$transactionId.loader.setuptransfer( transferid, length, pieces )
+ *
+ * /NOTE
+ *
+ * @property string $id
+ * @property Boolean[] $pieces an array of Boolean
+ * @property int $pieceCount DEPRECATED use count($pieces)
+ * @property int $pieceSize the length of each transfer piece
  *
  * @author Kiriakos
  */
-class BTransfer extends BModel{
+class BTransfer extends EBasiinActiveRecord {
     /**
-     *
+     *  Hash generated clientside by init.hash
      * @var string
      */
-    private $tag;
-    public function getTag(){return $this->tag;}
+    protected $id;
+
     /**
-     *  Associative array of recieved pieces
-     *
-     * pieceNo=>pieceNodata
-     * 
+     *  Bool[] of pieces True for recieved pieces
      * @var array
      */
-    private $pieces;
-    private function createPiece($i,$data){
-        $this->pieces[$i] = $data;
+    protected $pieces;
 
-        }
+
+    /**
+     *  Create a transfer piece (BPiece) and add it to $this->pieces array
+     * @param integer $i
+     * @param string $data
+     * @return BPiece
+     */
+    public function createPiece($index,$data){
+        $this->pieces[$index] = new BPiece($index, $data);
+        return $this->pieces[$index];
+    }
 
     /**
      *
-     * @param string $tag
+     * @param string $id
      * @param array $data
      */
-    public function  __construct($tag = NULL,$data = NULL) {
+    public function  __construct($id = NULL,$data = NULL) {
 
-        // this should never happen, BTransfer inits are done with $tag
+        // this should never happen, BTransfer inits are done with $id
         // these occur on genuine new instantiations
-        if ($data === NULL && $tag === NULL) 
-            $this->tag = Basiin::generateTransferTag();
+        if ($data === NULL && $id === NULL) 
+            $this->id = Basiin::generateTransferId();
 
         //these occur when unpacjing from session storage
-        if($tag !==NULL )
-            $this->tag = $tag;
+        if($id !==NULL )
+            $this->id = $id;
         if($data !== NULL)
             $this->unpack($data);
         

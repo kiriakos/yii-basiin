@@ -15,22 +15,25 @@
 class Basiin{
     //the total string length if a transfer exceeds this the transfer is
     //canceled and the data forgotten
-    const MaxTransferSize = 1000000; //1M bytes
+    const MaxTransferSize = 2000000; //2M bytes
 
     //How many simultaneous BTransactions can a Session do
     const MaxConcursiveTransactions = 8;
-    const TransactionTimeOutSec = 300; //how long after start does cleanup keep the transaction
+    const TransactionTTL = 300; //how long after start does cleanup keep the transaction
     
     //How many simultaneous BTransfers can a transaction do
     const MaxConcursiveTransfers = 4;
     const MaxConcursiveElements = 8;//active script tags (sum of all Transfers)
-    const TransferTimeOutSec = 120;
+    const TransferTTL = 120;// 2min?
     
     //Array, populated by BasiinModule->beforeControllerAction() that calls Basiin::rebuildTransactions
     private static $transactions = array();
 
     /**
      * Returns a string that will uniquely identify a transaction
+     *
+     * 
+     * 
      *
      * ATM 14 chars, first always a char
      * @return string 
@@ -44,16 +47,20 @@ class Basiin{
      * Returns a string that will uniquely identify a transfer
      *
      * TODO: find a usefull/meaningful generation algo
+     *       this function is DEPRECATED ids are assigned by the db now
      *
      * ATM is just a wrapper for self::generateTransactionId()
      */
-    public static function generateTransferTag(){
+    public static function generateTransferId(){
         
         return self::generateTransactionId();
     }
 
     /**
      * a-zA-Z char randomizer
+     *
+     * TODO: this has to have a better alt.....
+     *
      * @param <type> $array
      * @return string
      */
@@ -150,14 +157,14 @@ class Basiin{
      * @param BTransaction[] $transactions
      */
     private static function cleanupTransactions($transactions = NULL){
-        if($transactions === NULL) {
+        if($transactions === NULL) { //arguments check
             $transactions = self::$transactions;
             $noReturn=True;
         }
 
         //remove timed out transactions
         foreach ($transactions as $id=>$transaction){
-            if ($transaction->started < time() - self::TransactionTimeOutSec )
+            if ($transaction->timeout < time() )
                     unset($transactions[$id]);
 
             self::cleanupTransfers ($transaction);
