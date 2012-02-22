@@ -19,7 +19,7 @@
  *
  * @author Kiriakos
  */
-class BTransfer extends EBasiinActiveRecord {
+class BTransfer extends BasiinActiveRecord {
     /**
      *  Hash generated clientside by init.hash
      * @var string
@@ -31,18 +31,6 @@ class BTransfer extends EBasiinActiveRecord {
      * @var array
      */
     protected $pieces;
-
-
-    /**
-     *  Create a transfer piece (BPiece) and add it to $this->pieces array
-     * @param integer $i
-     * @param string $data
-     * @return BPiece
-     */
-    public function createPiece($index,$data){
-        $this->pieces[$index] = new BPiece($index, $data);
-        return $this->pieces[$index];
-    }
 
     /**
      *
@@ -66,37 +54,6 @@ class BTransfer extends EBasiinActiveRecord {
 
     }
 
-    /**
-     * Returns a stClass object with all the important data of the object
-     *
-     * Used by BTransaction->package to safely encode data for session storage
-     *
-     * @return stdClass
-     */
-    public function package(){
-        $result = new stdClass();
-
-        foreach ($this as $key => $value){
-            if(is_object($value) && method_exists($value, 'package'))
-                $result->$key = $value->package();
-            else
-                $result->$key = $value;
-        }
-
-        return $result;
-    }
-
-    /**
-     *  Unpacks BTransfer objects stored in $data into $this
-     * @param packedBTransfer[] $transfers
-     * @return BTransfer[]
-     */
-    public function unpack($data){
-        foreach ($data as $id=>$value){
-            $this->id = $value;
-        }
-        return true;
-    }
     
 }
 

@@ -5,7 +5,7 @@
  *
  * @author Kiriakos
  */
-class EBasiinActiveRecord extends CActiveRecord {
+class BasiinActiveRecord extends CActiveRecord {
 
 
         public function getDbConnection()
