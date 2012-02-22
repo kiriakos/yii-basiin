@@ -52,8 +52,9 @@ CREATE TABLE basiin_transfer(
      variable_name CHAR(40) NOT NULL /* this string is the name of the variable
                                         that will be returned by the script
                                         tags */
-     FOREIGN KEY (transaction_id) REFERENCES basiin_transaction(id)
-     
+     FOREIGN KEY (transaction_id) REFERENCES basiin_transaction(id) ON DELETE CASCADE
+     /* alt syntax:
+        transaction_id INTEGER REFERENCES basiin_transaction(id) ON DELETE CASCADE*/
 );
 CREATE INDEX basiin_transfer_transactions ON basiin_transfer(transaction_id);
 CREATE INDEX basiin_transfer_timeouts ON basiin_transfer(timeout ASC);
@@ -67,7 +68,7 @@ CREATE TABLE basiin_pieces(
      transfer_id INTEGER PRIMARY KEY, /* alias of basiin_transfer(id) */
      pieces TEXT /* a single binary string of data representing each piece's
                     transfer status (True=1, False=0) */
-     FOREIGN KEY (transfer_id) REFERENCES basiin_transfer(id)
+     FOREIGN KEY (transfer_id) REFERENCES basiin_transfer(id) ON DELETE CASCADE
      
 );
 
