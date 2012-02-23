@@ -8,7 +8,7 @@
     BTransaction separating db data from data taken directly from the 
                  Basiin static object
 
-2020 - 02 -21
+2012 - 02 -22
     Basiin.db.sql:  keep working
     init.js:        Decided to make basiin a non touchdown object (no var
                     references it). Plugins and user code will be incorporated
@@ -30,3 +30,13 @@
                              response is executed the variable is unset.
                              Care has to be put on hash tag creation, the
                              variable can't exists beforehand.
+
+2012 - 02 - 23
+    Transaction.php:created
+    Transfer.php:   created
+    Pieces.php:     created
+
+    manyfiles:      movet AR classes to BFiles adn BClasses, deleted old Bs
+    basiin.php:     Debug behavior now is controlled by Basiin::DEBUG
+
+    

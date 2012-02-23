@@ -22,7 +22,7 @@ class BasiinModule extends CWebModule
          */
 	public function beforeControllerAction($controller, $action)
 	{
-                $init = Basiin::init();
+                $init = Basiin::startUp();
 
                 if($init == false)
                     die('Basiin initialization failed');

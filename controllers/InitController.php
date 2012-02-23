@@ -22,7 +22,7 @@ class InitController extends Controller
          *
          * @param string $nextAction
          */
-        public function actionInit($id = 'controllers', $random = null)
+        public function actionInit($action = 'controllers', $random = null)
 	{
             //set transaction ID
             $transaction = Basiin::newTransaction();
@@ -42,7 +42,7 @@ class InitController extends Controller
                         'onLoad'=>"js:function(){".$transaction->id.".jQuery = jQuery.noConflict(true);}",
                 )),
                 'command'=>'image',
-                'debug'=>true,
+                'debug'=>Basiin::DEBUG,
                 'homeDomain'=>Yii::app()->request->hostInfo,
                 'basiinPath'=>'basiin',
                 'filePath'=>'scripts',

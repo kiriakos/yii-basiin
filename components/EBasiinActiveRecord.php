@@ -5,7 +5,7 @@
  *
  * @author Kiriakos
  */
-class BasiinActiveRecord extends CActiveRecord {
+class EBasiinActiveRecord extends CActiveRecord {
 
 
         public function getDbConnection()
@@ -14,5 +14,9 @@ class BasiinActiveRecord extends CActiveRecord {
             return Yii::createComponent($db);
         }
 
+        public function __construct($scenario = 'insert') {
+            //populates the properties & init()
+            parent::__construct($scenario);
+        }
 }
 ?>

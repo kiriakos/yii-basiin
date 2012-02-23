@@ -6,11 +6,35 @@
  * Usage: host.domain/basiin/init/"nextAction"
  * 
  */
-class InitController extends Controller
+class TransferController extends Controller
 {
         public $defaultAction = 'recieve';
         public $layout='//layouts/selfRemove';
-        
+
+
+        /**
+         *  Sets up a new transfer for transaction: $transactionId
+         *
+         * The rendered view returns a funciton that completes the client side
+         * Basiin Transfer object. The returned values are
+         * Required:
+         * Transfer.id: the saved BTransfer's id that will be used in the last
+         *
+         * Auxiliary:
+         * Transfer.maxPieceLength: if the basiin server want's to dictate a max
+         *                          piece length this can be done here.
+         * Tranfer.maxActivePieces: if the basiin server want's to limit the
+         *                          maximum number of active tranfer elements
+         *
+         *
+         * @param integer $transactionId
+         * @param string $varName       The result of basiin's _hash on Transfer.data
+         * @param integer $dataLength   The length (byte size) of Transfer.data
+         */
+        public function actionNew($transactionId, $varName, $dataLength){
+            
+        }
+
         /**
          * A request to initialize a Basiin transaction
          *

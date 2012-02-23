@@ -6,13 +6,16 @@
  * This static class provides the gruntwork layer for basiin logic.
  * It incorporates the funcitons:
  *
- * @static @method generateTransactionId()
- * @static @method getTransactions()
- * @static @param BTransaction[] $transactions
  *
  * @author Kiriakos
  */
 class Basiin{
+
+    /**************************************************************************
+     *******************************CONSTANTS**********************************
+     **************************************************************************/
+
+
     //the total string length if a transfer exceeds this the transfer is
     //canceled and the data forgotten
     const MaxTransferSize = 2000000; //2M bytes
@@ -25,76 +28,79 @@ class Basiin{
     const MaxConcursiveTransfers = 4;
     const MaxConcursiveElements = 8;//active script tags (sum of all Transfers)
     const TransferTTL = 120;// 2min?
+
+    //mostly a js variable set to false on production
+    const DEBUG = true;
     
-    //Array, populated by BasiinModule->beforeControllerAction() that calls Basiin::rebuildTransactions
+    /**************************************************************************
+     *****************************TRANSACTIONS*********************************
+     **************************************************************************/
+
+    /**
+     *  Array of the sessions BTransactions or empty array
+     * @var BTransaction[]
+     */
     private static $transactions = array();
 
     /**
-     * Returns a string that will uniquely identify a transaction
-     *
-     * 
-     * 
-     *
-     * ATM 14 chars, first always a char
-     * @return string 
+     *  Returns an array of BTransaction instances in the visitor's session
+     * @return BTransaction[]
      */
-    public static function generateTransactionId(){
-        
-        return self::generateRandomChar().uniqid();
+    public static function getTransactions(){
+        return self::$transactions;
     }
 
     /**
-     * Returns a string that will uniquely identify a transfer
+     * Returns a transaction from the sessions transaction by it's id
      *
-     * TODO: find a usefull/meaningful generation algo
-     *       this function is DEPRECATED ids are assigned by the db now
-     *
-     * ATM is just a wrapper for self::generateTransactionId()
+     * @param string $id
+     * @return BTransaction
      */
-    public static function generateTransferId(){
-        
-        return self::generateTransactionId();
+    public static function getTransaction($id){
+
+        foreach (self::$transactions as $key=>$transaction){
+            if ($key === $id) return $transaction;
+        }
+
+        return false;
     }
 
     /**
-     * a-zA-Z char randomizer
-     *
-     * TODO: this has to have a better alt.....
-     *
-     * @param <type> $array
-     * @return string
+     * Generates a new BTransaction and saves it into session returning the instance
+     * @return BTransaction
      */
-    private static function generateRandomChar($array = false){
-        $chars = array("q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "l", "k", "j",
-            "h", "g", "f", "d", "s", "a", "z", "x", "c", "v", "b", "n", "m",
-            "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "L", "K", "J",
-            "H", "G", "F", "D", "S", "A", "Z", "X", "C", "V", "B", "N", "M");
-        shuffle($chars);
-        
-        if ($array) return $chars;
-        else return $chars[0];
+    public static function newTransaction(){
+        if (!self::$initialized) self::startUp ();
+
+        $transaction = new BTransaction();
+
+        self::$transactions[$transaction->id] = $transaction;
+
+        return $transaction;
     }
 
 
+    /**************************************************************************
+     ******************************APP-EVENTS**********************************
+     **************************************************************************/
+
+
     /**
-     *  Initializer
+     * Initializer (sets up the BTransaction objects in $transactions)
      *
      * is called by BasiinModule->beforeControllerAction
      * @return boolean
      */
-    public static function init(){
-        // internal init
-        self::$initialized = True;
+    public static function startUp(){
+        if (!self::$initialized)
+            self::$initialized  = self::rebuildTransactions(Yii::app()->session['transactions']);
 
-        // extrenal init
-        self::rebuildTransactions(Yii::app()->session['transactions']);
-        
-        return true;
+        return self::$initialized;
     }
-    private static $initialized = NULL;
+    private static $initialized = null;
 
     /**
-     *  Shut down functions
+     *  Shut down functions (set session transactions to BTransaction->ids)
      *
      * is called by BasiinModule->afterControllerAction
      * @return boolean
@@ -112,47 +118,45 @@ class Basiin{
     }
 
     /**
-     *  Returns an array of BTransaction instances in the visitor's session
-     * @return BTransaction[]
+     * Gets a BTransaction[] from $transactionIds that is an arr from BTransaction->ids
+     *
      */
-    public static function getTransactions(){
-        return self::$transactions;
+    private static function rebuildTransactions(array $transactionIds){
+
+       $transactions = BTransaction::model()->findAllByPk($transactionIds);
+
+       if (!$transactions) $transactions = array();
+
+       self::$transactions = $transactions;
+
+       return true;
     }
 
     /**
-     * Returns a transaction from the sessions transaction by it's id
-     * 
-     * @param string $id
-     * @return BTransaction
+     * Return an array of BTransaction->ids that belong to this session
+     *
+     * called by Basiin::shutDown
+     *
+     * @return integer[]
      */
-    public static function getTransaction($id){
-        
-        foreach (self::$transactions as $key=>$transaction){
-            if ($key === $id) return $transaction;
-        }
-        
-        return false;
+    private static function serializeTransactions(){
+
+        $ts = array();
+
+        foreach (self::$transactions as $transaction)
+            $ts[] = $transaction->id;
+
+        return $ts;
     }
 
-    /**
-     * Generates a new BTransaction and saves it into session returning the instance
-     * @return BTransaction
-     */
-    public static function newTransaction(){
-        if (!self::$initialized) self::init ();
-        
-        $transaction = new BTransaction();
-        
-        self::$transactions[$transaction->id] = $transaction;
-        // memory maintenance, forget old or overflowing transactions
-        self::cleanupTransactions();
-
-        return $transaction;
-    }
     
+    /**************************************************************************
+     *****************************MAINTAINANCE*********************************
+     **************************************************************************/
+
 
     /**
-     * Make sure transactions are less than MaxConcursiveTransactions and Transf
+     * unset any transaction id that is timed out or overflowing maxCount
      *
      * @param BTransaction[] $transactions
      */
@@ -166,10 +170,12 @@ class Basiin{
         foreach ($transactions as $id=>$transaction){
             if ($transaction->timeout < time() )
                     unset($transactions[$id]);
-
+            
+            //remove timed out transfers aswell
             self::cleanupTransfers ($transaction);
         }
-        
+
+        // if self::MaxConcursiveTransactions has been reached remove the oldest
         while ( count( $transactions ) > self::MaxConcursiveTransactions){
             array_shift($transactions);
         }
@@ -193,47 +199,22 @@ class Basiin{
         return true;
     }
 
-    /**
-     * Builds the sessions transaction pool from serialized session storage
-     *
-     * the session storage is a encoded json string
-     */
-    private static function rebuildTransactions($transactions){
-       $trs = json_decode($transactions);
-       $result = array();
-       
-       if (!is_array($trs) && !is_object($trs)) return true;
 
-       foreach ($trs as $id=>$transaction)
-           $result[$id] = new BTransaction ($id,$transaction);
-       
-       self::$transactions = $result;
 
-       return true;
-    }
+    /**************************************************************************
+     *******************************RENDERER***********************************
+     **************************************************************************/
 
-    /**
-     * takes self::$transactions and json encodes them
-     *
-     * called by Basiin::shutDown
-     */
-    private static function serializeTransactions(){
-        $trs = array(); //represents self::$transf...
-        
-        foreach ( self::$transactions as $id=>$transaction ){
-            $trs[$id] = $transaction->package(); //represents a BTransf...
-        }
-        
-        $trs = json_encode($trs);
-        
-        return $trs;
-    }
-
+    
     /**
      *  Find a view file from the views available to this controller
      *
      * will check for files prioritizing an exact match > a minified js > js
      * if no hit the $fail value will be returned
+     *
+     * this is public because controllers should benefit from this functionality
+     * also.
+     * 
      * @param CController $controller
      * @param string $file
      * @param mixed $fail
@@ -365,7 +346,7 @@ class Basiin{
                 else
                     $renderProduct = str_replace($var, CJavaScript::encode ($data[$varName]), $renderProduct);
             }elseif($stopOnError){
-                throw new CHttpException(500, "the data ${var} could not be found", 007);
+                throw new CHttpException(500, "the data {$var} could not be found", 007);
             }else{
                 $renderProduct = str_replace($var, 'null', $renderProduct);
             }
@@ -375,4 +356,6 @@ class Basiin{
     }
 
 }
-?>
+
+
+
