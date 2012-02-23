@@ -26,9 +26,13 @@ class InitController extends Controller
 	{
             //set transaction ID
             $transaction = Basiin::newTransaction();
+            
+            //put the id's of other active transactions in session into an array
             $trs = array();
             foreach (Basiin::getTransactions() as $tr)
                 $trs[] = $tr->id;
+
+            //render the init file
             $rendered = Basiin::renderFile('init', $this, array(
                 'transaction'=>$transaction,
                 'transactions'=>$trs,

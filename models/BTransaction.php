@@ -14,17 +14,6 @@
  */
 class BTransaction extends EBasiinActiveRecord
 {
-        public function  __construct($scenario = 'insert') {
-            //populates the properties & init()
-            parent::__construct($scenario); 
-
-            //if new entry ad started
-            if ($this->isNewRecord()) $this->started = time();
-
-            //timeout must be updated on evey call.
-            $this->setTimeout();
-            
-        }
 
 	/**
 	 * Returns the static model of the specified AR class.
@@ -84,28 +73,90 @@ class BTransaction extends EBasiinActiveRecord
 	}
 
         /**
-         * The path to which to send data to
+         * Load BTransfer with it's BPieces objects eagerly, automatically, and in one query
+         * @return string
+         */
+        public function defaultScope(){
+            return 'active';
+        }
+
+        public function scopes(){
+
+            return array(
+                'withTransfers'=>array(
+                    'with'=>'transfers',
+                    'together'=>'true',
+                    'criteria'=>'timeout > '.time(),
+                ),
+                'active'=>array(
+                    'criteria'=>'timeout > '.time(),
+                )
+            );
+        }
+
+    /**************************************************************************
+     *****************************MODEL-EVENTS*********************************
+     **************************************************************************/
+
+        /**
+         *  Before saving remember to update the timeout timer
+         * @param CEvent $event
+         */
+        public function  onBeforeSave($event) {
+            parent::onBeforeSave($event);
+
+            $this->setTimeout();
+        }
+
+        /**
+         *  If the transaction is saved also save all of its transfers
+         * @param CEvent $event
+         */
+        public function onAfterSave($event){
+
+            if (parent::onAfterSave($event))
+                foreach ($this->transfers as $transfer)
+                    $transfer->save();
+
+        }
+
+        /**
+         *  On new object creation set the start time and other init values..
+         * @param CEvent $event
+         */
+        public function  onAfterConstruct($event) {
+            parent::onAfterConstruct($event);
+            
+            $this->started = time();
+        }
+
+
+    /**************************************************************************
+     *************************** Functionality ********************************
+     **************************************************************************/
+
+
+        /**
+         *  The path to which to send data to
          * @return string
          */
         public function getDefaultPath(){
             return 'basiin/tell/'.$this->id;
-
         }
 
         /**
-         * Set timeout
+         * Set the timeout second depending on TransactionTTL
          */
-        public function setTimeout(){
+        private function setTimeout(){
             $this->timeout = time() + Basiin::TransactionTTL;
         }
-
-
+        
         /**
-         *  Returns the transfer with the correct $tag or False
-         * @param string $tag
+         *  Returns the transfer with the requested $id or False
+         * @param string $id
          * @return BTransfer false
          */
-        public function getTransfer($id){
+        public function getTransfer( integer $id ){
             foreach ($this->transfers as $transfer)
                     if ($transfer->id == $id) return $transfer;
 
@@ -118,31 +169,13 @@ class BTransaction extends EBasiinActiveRecord
          * @param string $data
          * @return BTransfer
          */
-        public function newTransfer(){
+        public function newTransfer(string $varName, integer $dataLength, integer $pieceLength){
 
             $transfer = new BTransfer();
-
+            $transfer->initialize($varName, $dataLength, $pieceLength);
+            
             $this->transfers[] =$transfer;
 
             return $transfer;
-        }
-
-        /**
-         * Load BTransfer with it's BPieces objects eagerly, automatically, and in one query
-         * @return string
-         */
-        public function defaultScope(){
-            return 'withTransfers';
-        }
-
-        public function scopes(){
-
-            return array(
-                'withTransfers'=>array(
-                    'with'=>'transfers',
-                    'together'=>'true',
-                    'criteria'=>'timeout > '.time(),
-                ),
-            );
         }
 }

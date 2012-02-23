@@ -39,4 +39,12 @@
     manyfiles:      movet AR classes to BFiles adn BClasses, deleted old Bs
     basiin.php:     Debug behavior now is controlled by Basiin::DEBUG
 
-    
+    basiin.php:     shut down doesn't autosave all transactions, it would be
+                    overkill. Instead from now on save each transaction on
+                    controller.
+
+    basiin.php:     handles instantiation of Transactions
+    BTransaction.php:instances handle instantiation of their BTransfers
+    BTransfer.php:  instances also create a BPiece on creation;
+
+    working on BTransfer::onBeforeSave

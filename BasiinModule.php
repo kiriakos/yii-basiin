@@ -25,7 +25,7 @@ class BasiinModule extends CWebModule
                 $init = Basiin::startUp();
 
                 if($init == false)
-                    die('Basiin initialization failed');
+                    throw new CHttpException(500, 'Basiin Failed to initialize', 666);
                 else{
                     if(parent::beforeControllerAction($controller, $action))
                         return true;
@@ -42,7 +42,7 @@ class BasiinModule extends CWebModule
                 $shutDown = Basiin::shutDown();
 
                 if($shutDown === FALSE)
-                    die('basiinFailed to shut down');
+                    throw new CHttpException(500, 'Basiin Failed to shut down', 666);
                 else{    
                     if(parent::afterControllerAction($controller, $action))
                         return true;

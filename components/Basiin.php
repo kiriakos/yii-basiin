@@ -19,6 +19,7 @@ class Basiin{
     //the total string length if a transfer exceeds this the transfer is
     //canceled and the data forgotten
     const MaxTransferSize = 2000000; //2M bytes
+    const MaxPieceSize = 100000; //100K bytes
 
     //How many simultaneous BTransactions can a Session do
     const MaxConcursiveTransactions = 8;
@@ -32,6 +33,26 @@ class Basiin{
     //mostly a js variable set to false on production
     const DEBUG = true;
     
+    /**************************************************************************
+     ****************************** TRANSFERS *********************************
+     **************************************************************************/
+
+
+    public function canAcceptTransfer( integer $size , integer $pieceSize ){
+
+        if ( $size <= self::MaxTransferSize && self::hasStorage($size)
+                && $pieceSize <= self::MaxPieceSize )
+            return true;
+
+        return false;
+    }
+
+    private function hasStorage( int $size ){
+        //TODO: create a space checking algo... or no need?
+        return true;
+    }
+
+
     /**************************************************************************
      *****************************TRANSACTIONS*********************************
      **************************************************************************/
@@ -51,17 +72,14 @@ class Basiin{
     }
 
     /**
-     * Returns a transaction from the sessions transaction by it's id
-     *
+     * Returns a BTransaction from the session's transactions by it's $id
      * @param string $id
      * @return BTransaction
      */
     public static function getTransaction($id){
-
-        foreach (self::$transactions as $key=>$transaction){
-            if ($key === $id) return $transaction;
+        foreach (self::$transactions as $transaction){
+            if ($transaction->id == $id) return $transaction;
         }
-
         return false;
     }
 
@@ -74,7 +92,7 @@ class Basiin{
 
         $transaction = new BTransaction();
 
-        self::$transactions[$transaction->id] = $transaction;
+        self::$transactions[] = $transaction;
 
         return $transaction;
     }
@@ -93,8 +111,9 @@ class Basiin{
      */
     public static function startUp(){
         if (!self::$initialized)
-            self::$initialized  = self::rebuildTransactions(Yii::app()->session['transactions']);
-
+            self::$initialized  = self::rebuildTransactions(
+                    Yii::app()->session['transactions']);
+        
         return self::$initialized;
     }
     private static $initialized = null;
@@ -103,6 +122,7 @@ class Basiin{
      *  Shut down functions (set session transactions to BTransaction->ids)
      *
      * is called by BasiinModule->afterControllerAction
+     * 
      * @return boolean
      */
     public static function shutDown(){
@@ -121,15 +141,18 @@ class Basiin{
      * Gets a BTransaction[] from $transactionIds that is an arr from BTransaction->ids
      *
      */
-    private static function rebuildTransactions(array $transactionIds){
+    private static function rebuildTransactions(array $transactionIds = null){
 
-       $transactions = BTransaction::model()->findAllByPk($transactionIds);
+        if ($transactionIds)
+            $transactions = BTransaction::model()->findAllByPk($transactionIds);
+        else
+            $transactions = array();
 
-       if (!$transactions) $transactions = array();
+        if ( !$transactions ) $transactions = array();
 
-       self::$transactions = $transactions;
+        self::$transactions = $transactions;
 
-       return true;
+        return true;
     }
 
     /**

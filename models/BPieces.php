@@ -85,4 +85,15 @@ class BPieces extends BasiinActiveRecord
 			'criteria'=>$criteria,
 		));
 	}
+
+
+        public function createPieceString(integer $length){
+            $arr = array();
+            //create an array of $length
+            while (count($arr) > $length)
+                $arr[]=0;
+
+            //return imploded array
+            return implode('', $arr);
+        }
 }

@@ -44,7 +44,8 @@ CREATE TABLE basiin_transfer(
      started INTEGER NOT NULL, /* epoch second of the init if the transfer */
      timeout INTEGER NOT NULL, /* epoch second on which the trans times out
                                   controlled by __construct and Basiin:: */
-     file CHAR(40) NOT NULL,
+     file_name CHAR(40) NOT NULL,
+     file_size INTEGER NOT NULL, /* how many bytes is the transfer */
      piece_count INTEGER NOT NULL, /* the quantity of pieces in the transfer */
      piece_size INTEGER NOT NULL, /* the (byte) length of each piece */
      variable_name CHAR(40) NOT NULL, /* this string is the name of the variable

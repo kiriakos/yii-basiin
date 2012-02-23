@@ -31,7 +31,19 @@ class TransferController extends Controller
          * @param string $varName       The result of basiin's _hash on Transfer.data
          * @param integer $dataLength   The length (byte size) of Transfer.data
          */
-        public function actionNew($transactionId, $varName, $dataLength){
+        public function actionNew( $transactionId, $varName, $pieceLength, $dataLength){
+            $transactionId = (integer) $transactionId;
+            $dataLength = (integer) $dataLength;
+            $pieceLength = (integer) $pieceLength;
+
+            $transaction = Basiin::getTransaction($transactionId);
+
+            if (!$transaction) throw new CHttpException(404, 
+                    "The BTransaction {$transactionId} doesn't exist any more.", 007);
+
+
+            if (Basiin::canAcceptTransfer($dataLength,$pieceLength))
+                 $transfer = $transaction->newTransfer($varName,$dataLength,$pieceLength);
             
         }
 
