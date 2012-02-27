@@ -14,19 +14,16 @@ function(tr){
 
     //dispatch a piece of data to the server
     var _sendPiece = function(){
-        if(_state==2){ //while transfer state is in transfering
-                
+        if(_state==2){ //while transfer state is in transfering        
                 var piece = _getPiece({'pending':true}); // obj{id,data}
 
-                if (piece)
-                    piece.send();
-                else
-                    return false;
+                if (piece) piece.send();
+                else return false;
 
                 _log( tr.tag + ' sending piece: ' +piece.index);
                 return piece;
-            }
-            return false;
+        }
+        return false;
     };
     //return a piece{index,data} that hasn't been transfered yet
     var _getPiece = function(obj){
@@ -42,44 +39,7 @@ function(tr){
     };
 
     //piece prototype:
-    var Piece = function (index,data){
-        var _index  = index;
-        var _data   = data;
-        var _state  = 0;
-        var _element;
-        var _verify = function(){return true;} //TODO: create a data verification mech
-        
-        return {
-            'data':_data,
-            'index':_index,
-            'state': function(){return _state},//0=pending,1=active,2=completed
-            'pending': function(){return (_state==0)}, //return state
-            'transfering': function(){return (_state==1)}, //return state
-            'completed': function(){return (_state==2)}, //return state
-            
-            //verify a piece was sent successfully
-            'complete':function(hash){
-                if(_verify(hash))_state=2;
-                else _state=0;
-                return (_state===2);
-            },
-            
-            'send':function(){
-                _state=1;
-                var that = this;
-                var loadFunc = function(){
-                    _log('loadFunc: piece '+that.index+' successfully sent!')
-                    tr.instance.sentPiece(that.index);
-                }
-
-                _element = _elements.script(
-                    [ 'tell', tr.tag, _index, _data ],
-                    loadFunc
-                );
-            }
-
-        };
-    }
+    $__Piece
     
     //Initialize the transfer object with default values + args
     var init = function (tr){

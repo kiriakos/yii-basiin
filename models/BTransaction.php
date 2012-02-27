@@ -14,7 +14,7 @@
  */
 class BTransaction extends EBasiinActiveRecord
 {
-
+        
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @return Transaction the static model class
@@ -77,7 +77,10 @@ class BTransaction extends EBasiinActiveRecord
          * @return string
          */
         public function defaultScope(){
-            return 'active';
+            return array(
+                //the active scope. Why can't I assign scopes by name here?
+                'condition'=>'t.timeout > '.time()
+                );
         }
 
         public function scopes(){
@@ -86,10 +89,10 @@ class BTransaction extends EBasiinActiveRecord
                 'withTransfers'=>array(
                     'with'=>'transfers',
                     'together'=>'true',
-                    'criteria'=>'timeout > '.time(),
+                    'condition'=>'t.timeout > '.time(),
                 ),
                 'active'=>array(
-                    'criteria'=>'timeout > '.time(),
+                    'condition'=>'t.timeout > '.time(),
                 )
             );
         }
@@ -104,8 +107,6 @@ class BTransaction extends EBasiinActiveRecord
          */
         public function  onBeforeSave($event) {
             parent::onBeforeSave($event);
-
-            $this->setTimeout();
         }
 
         /**
@@ -125,11 +126,23 @@ class BTransaction extends EBasiinActiveRecord
 
         }
 
+        /**
+         *  Last minute attrib changes + newRecord Initialization
+         * @param CEvent $event
+         */
         public function  onBeforeValidate($event) {
-            parent::onBeforeValidate($event);
+                //die('afterConstruct (workaround onBV)');
+                if ($this->isNewRecord){
+                    $this->started = time();
+                }
+
+                $this->setTimeout(); //always update timeout
+
+                parent::onBeforeValidate($event);
+                
         }
-        public function  onAfterValidate($event) {
-            
+        
+        public function  onAfterValidate($event) {  
             parent::onAfterValidate($event);
         }
 
@@ -138,11 +151,8 @@ class BTransaction extends EBasiinActiveRecord
          * @param CEvent $event
          */
         public function  onAfterConstruct($event) {
-            
+            die('onAfterConstruct');
             parent::onAfterConstruct($event);
-
-            die('afterConstruct');
-            $this->started = time();
         }
 
 
@@ -192,5 +202,12 @@ class BTransaction extends EBasiinActiveRecord
             $this->transfers[] =$transfer;
 
             return $transfer;
+        }
+
+        public function getMaxTransfers(){
+            return Basiin::MaxConcursiveTransfers;
+        }
+        public function getMaxElements(){
+            return Basiin::MaxConcursiveElements;
         }
 }

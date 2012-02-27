@@ -30,6 +30,9 @@
                              response is executed the variable is unset.
                              Care has to be put on hash tag creation, the
                              variable can't exists beforehand.
+                        after Transfer has send all pieces it asks Basiin server
+                        for confirmation:
+                        tell/complete/transactionId/transferId/responseVar
 
 2012 - 02 - 23
     Transaction.php:created
@@ -48,3 +51,15 @@
     BTransfer.php:  instances also create a BPiece on creation;
 
     working on BTransfer::onBeforeSave
+
+2012 - 02 -27
+    BTransaction.php:workaround for onAfterCreate
+    initController: now works with the AR transactions
+    init.js:        updating to no touchdown model
+    Transfer.js:    updating to the three stage transfer model.
+    init.js:        added _varHash function (generate randomized valid varnames)
+
+
+TODO: transaction cleanup on max
+      transaction cleanup on interval
+      same for transfers

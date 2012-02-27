@@ -6,7 +6,8 @@
     /***************************************************************************
      * Private
      **************************************************************************/
-    var _dbglvl = 5; //higher == more verbose 0 == invalid 5 == max
+    var basiin = null;
+    var _dbglvl = $debuglvl; //higher == more verbose 0 == invalid 5 == max
     var _initialized = false;
     var _transaction = {
         'id': "$transaction__id" , 'transactions': $transactions,
@@ -22,11 +23,34 @@
         'maxTransfers': "$transaction__maxTransfers", // server transfer limit
         'maxElements': "$transaction__maxElements" //browser load limit
     };
+
+    var $__hash
+
+    /**
+     *Returns a _hash of str which can be used as a javascript variable
+     *
+     *the returned string always starts with a char of [a-zA-Z]
+     *the returned string has length hashlength or hashlength+1
+     *the process is consistent (every str value has exactly 1 return value)
+     *
+     *All publicly accessible variables bassin creates ( element variables,
+     *basiin object verifiers )
+     *
+     *@return string
+     */
+    var _varHash = function(str)
+    {
+        var hash = _hash(str);
+        // if hash starts with a number add the first alpha char
+        if (hash.match(/^[0-9]/)) hash = hash.match(/[a-zA-Z]/)+hash;
+        
+        return hash;
+    }
     
     
     //don't run if a basiin session is already existing
     for (var i=0; i<_transaction.transactions.length; i++){
-        if (window.hasOwnProperty(_transaction.transactions[i]) ){
+        if (window.hasOwnProperty( _varHash(_transaction.transactions[i]) )){
                 /* trimmed: && _transaction.transactions[i] != _transaction.id
                  * even if the trans_id is the same the fw should not load.
                  * the public var is created in init
@@ -34,7 +58,7 @@
                 console.log('('+_transaction.id+') ' + 'Basin session is running, hold on');
                 return {init:function(){return null}}; // null or an object with init()?
     }}
-    
+
     /**
      *  Logs a message to console if debug==true or lvl == 0
      */
@@ -42,15 +66,22 @@
         if (!level) level = 0;
         
         if( (debug && level <= _dbglvl ) || level == 0) {
-            console.log('('+_transaction.id+') ' + message);
+            console.log('('+_varHash(_transaction.id)+') ' + message);
             return true;
         }
         return false;
     }
 
-    var $__hash
     var $__loader
     var $__elements
+
+    /**
+     * Extend the basiin object with item accesible through tag
+     */
+    var _extend = function(tag,item, overwrite){
+        if (basiin[tag] === undefined || overwrite)basiin[tag] = item;
+    }
+
     
     /***************************************************************************
      * Public interface

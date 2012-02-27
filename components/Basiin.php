@@ -32,6 +32,7 @@ class Basiin{
 
     //mostly a js variable set to false on production
     const DEBUG = true;
+    const DEBUGLVL = 5;
     
     /**************************************************************************
      ****************************** TRANSFERS *********************************
@@ -172,8 +173,7 @@ class Basiin{
 
         foreach (self::$transactions as $transaction)
             $ts[] = $transaction->id;
-
-        die(var_dump( $ts ));
+        
         return $ts;
     }
 
@@ -337,8 +337,11 @@ class Basiin{
             if ( count($arr) == 2 && 
                     isset($data[$arr[0]]) &&
                     is_object($data[$arr[0]]) &&
-                    (property_exists ( $data[$arr[0]] , $arr[1] ) ||
-                    method_exists($data[$arr[0]], 'get'.  ucfirst($arr[1]))) ){
+                    (
+                        property_exists ( $data[$arr[0]] , $arr[1] ) ||
+                        method_exists($data[$arr[0]], 'get'.  ucfirst($arr[1]))
+                    )
+                ){
                 if (is_string($data[$arr[0]]->$arr[1]))
                     $renderProduct = str_replace( $object,
                         $data[$arr[0]]->$arr[1], $renderProduct);

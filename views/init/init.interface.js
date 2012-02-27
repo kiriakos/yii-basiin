@@ -27,8 +27,13 @@
                 _log('loader.transfer: enqeueing Transfer object');
                 return transfer.enque();
             },
-            'install': function(tag,file){_install(tag,file)},
 
+            // tell the basiin loader to install "file" as "tag"
+            'install': function(tag,file){
+                _loader.install( {'tag':tag,'file':file} );
+            },
+
+            //verify file with "tag" was installed
             'confirmInstall': function(tag){//move file called tag obj from loading to loaded
                 return _loader.confirmInstall(tag);
             },
@@ -65,7 +70,9 @@
                 _initialized = true;
                 _log('basiin transaction '+_transaction.id+' initializing,')
                 /* init tasks */
-                eval('window.'+_transaction.id+' = this'); //put basiin into global namespace
+                eval('window.'+_varHash(_transaction.id)+' = true'); //put basiin into global namespace
+                basiin = this;
+                if (debug) eval('window.bajiin = this');
                 _loader.processQueues();
                 _elements.removeSelf();
                 _log('basiin transaction '+_transaction.id+' init completed,')
@@ -79,7 +86,12 @@
             if (debug) return eval(str);
             else return undefined;
         },
-        'bw': function (){return _loader.hasBandwidth();}
+        'bw': function (){
+            return _loader.hasBandwidth();
+        },
+        'x': function (tag, item){ 
+            _extend(tag,item, false);
+        }
 
     }
 })()

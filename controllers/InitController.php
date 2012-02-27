@@ -28,10 +28,8 @@ class InitController extends Controller
             $transaction = Basiin::newTransaction();
 
             //save the transaction after all it's changes are done.
-            
             $transaction->save();
-            var_dump($transaction->started);
-            die(var_dump( count(Basiin::getTransactions()) ) );
+
             //put the id's of other active transactions in session into an array
             $trs = array();
             foreach (Basiin::getTransactions() as $tr)
@@ -48,10 +46,12 @@ class InitController extends Controller
                     array(
                         'tag'=>'jQuery',
                         'file'=>'jquery-1.7.1.min.js',
-                        'onLoad'=>"js:function(){".$transaction->id.".jQuery = jQuery.noConflict(true);}",
+                        'onLoad'=>"js:function(){ basiin.jQuery = jQuery.noConflict(true);}",
+                       // 'onLoad'=>"js:function(){".$transaction->id.".jQuery = jQuery.noConflict(true);}",
                 )),
                 'command'=>'image',
                 'debug'=>Basiin::DEBUG,
+                'debuglvl'=>Basiin::DEBUGLVL,
                 'homeDomain'=>Yii::app()->request->hostInfo,
                 'basiinPath'=>'basiin',
                 'filePath'=>'scripts',
