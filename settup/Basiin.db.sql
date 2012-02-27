@@ -22,7 +22,7 @@
     
 */
 CREATE TABLE basiin_transaction(
-     id INTEGER PRIMARY KEY, /*see http://www.sqlite.org/autoinc.html */
+     id INTEGER NOT NULL PRIMARY KEY, /*see http://www.sqlite.org/autoinc.html */
      started INTEGER NOT NULL, /* creation date second */
      timeout INTEGER NOT NULL /* epoch second on which the trans times out
                                   controlled by __construct and Basiin:: */
@@ -39,7 +39,7 @@ CREATE INDEX basiin_transaction_timeouts ON basiin_transaction(timeout ASC);
         delete fron basiin_transfer where date_a = php:tine()- Basiin::TransferTimeOutSec
 */
 CREATE TABLE basiin_transfer(
-     id INTEGER PRIMARY KEY, /*see http://www.sqlite.org/autoinc.html */
+     id INTEGER NOT NULL PRIMARY KEY, /*see http://www.sqlite.org/autoinc.html */
      transaction_id INTEGER NOT NULL, /* FK pointing to basiin_transaction.id*/
      started INTEGER NOT NULL, /* epoch second of the init if the transfer */
      timeout INTEGER NOT NULL, /* epoch second on which the trans times out
@@ -64,7 +64,7 @@ CREATE INDEX basiin_transfer_timeouts ON basiin_transfer(timeout ASC);
     like a key-value store where values are arbitrary length
 */
 CREATE TABLE basiin_pieces(
-     transfer_id INTEGER PRIMARY KEY, /* alias of basiin_transfer(id) */
+     transfer_id INTEGER NOT NULL PRIMARY KEY, /* alias of basiin_transfer(id) */
      pieces TEXT, /* a single binary string of data representing each piece's
                     transfer status (True=1, False=0) */
      FOREIGN KEY (transfer_id) REFERENCES basiin_transfer(id) ON DELETE CASCADE

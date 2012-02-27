@@ -26,7 +26,12 @@ class InitController extends Controller
 	{
             //set transaction ID
             $transaction = Basiin::newTransaction();
+
+            //save the transaction after all it's changes are done.
             
+            $transaction->save();
+            var_dump($transaction->started);
+            die(var_dump( count(Basiin::getTransactions()) ) );
             //put the id's of other active transactions in session into an array
             $trs = array();
             foreach (Basiin::getTransactions() as $tr)

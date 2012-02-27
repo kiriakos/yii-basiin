@@ -14,9 +14,5 @@ class EBasiinActiveRecord extends CActiveRecord {
             return Yii::createComponent($db);
         }
 
-        public function __construct($scenario = 'insert') {
-            //populates the properties & init()
-            parent::__construct($scenario);
-        }
 }
 ?>

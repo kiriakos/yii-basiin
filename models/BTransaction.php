@@ -110,6 +110,11 @@ class BTransaction extends EBasiinActiveRecord
 
         /**
          *  If the transaction is saved also save all of its transfers
+         *
+         * This has a side effect of perpetuating the timeout of all the
+         * transfers in the transaction. Since the transaction is active this
+         * should be default behavior.
+         *
          * @param CEvent $event
          */
         public function onAfterSave($event){
@@ -120,13 +125,23 @@ class BTransaction extends EBasiinActiveRecord
 
         }
 
+        public function  onBeforeValidate($event) {
+            parent::onBeforeValidate($event);
+        }
+        public function  onAfterValidate($event) {
+            
+            parent::onAfterValidate($event);
+        }
+
         /**
          *  On new object creation set the start time and other init values..
          * @param CEvent $event
          */
         public function  onAfterConstruct($event) {
-            parent::onAfterConstruct($event);
             
+            parent::onAfterConstruct($event);
+
+            die('afterConstruct');
             $this->started = time();
         }
 

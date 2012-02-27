@@ -110,6 +110,7 @@ class Basiin{
      * @return boolean
      */
     public static function startUp(){
+        
         if (!self::$initialized)
             self::$initialized  = self::rebuildTransactions(
                     Yii::app()->session['transactions']);
@@ -140,10 +141,13 @@ class Basiin{
     /**
      * Gets a BTransaction[] from $transactionIds that is an arr from BTransaction->ids
      *
+     * if no transactions exist $transactionIds is cast into an array with a null value
+     *
+     * @param array $transactionIds
      */
     private static function rebuildTransactions(array $transactionIds = null){
-
-        if ($transactionIds)
+        //die(var_dump( is_array($transactionIds)  ));
+        if ( is_array($transactionIds) )
             $transactions = BTransaction::model()->findAllByPk($transactionIds);
         else
             $transactions = array();
@@ -169,6 +173,7 @@ class Basiin{
         foreach (self::$transactions as $transaction)
             $ts[] = $transaction->id;
 
+        die(var_dump( $ts ));
         return $ts;
     }
 

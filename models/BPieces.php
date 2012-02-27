@@ -87,6 +87,11 @@ class BPieces extends BasiinActiveRecord
 	}
 
 
+        /**
+         *  Generates a piece status string
+         * @param integer $length
+         * @return string
+         */
         public function createPieceString(integer $length){
             $arr = array();
             //create an array of $length
@@ -95,5 +100,37 @@ class BPieces extends BasiinActiveRecord
 
             //return imploded array
             return implode('', $arr);
+        }
+
+
+        /**
+         *  Returns true if the piece at $index has been recieved (==1)
+         * @param integer $index
+         * @return boolean
+         */
+        public function getRecieved(integer $index){
+            return ( substr($this->pieces, $index -1 , 1) == 1 );
+        }
+
+        /**
+         *  Sets the piece flag of piece $index to 1 (recieved) returns the pieces string
+         * @param integer $index
+         * @return string 
+         */
+        public function setRecieved(integer $index){
+
+            if ($index<1 || $index > strlen($this->pieces) ) return false;
+
+            $this->pieces = substr_replace( $this->pieces, 1, $index -1, 1);
+
+            return $this->pieces;
+        }
+
+        public function Completed(){
+
+            // === because strpos can return (string) "0" is substring is found
+            // @ begining of haystack. "0" is falsey so type checking is needed
+            return (strpos($this->pieces, '0') === FALSE );
+
         }
 }

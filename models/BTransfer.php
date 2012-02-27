@@ -144,14 +144,16 @@ class BTransfer extends EBasiinActiveRecord
         }
 
         /**
-         *  Update the timeout second before saving
+         *  Prepare the transfer object for saving
          * @param CEvent $event
          */
         public function  onBeforeSave($event) {
             parent::onBeforeSave($event);
 
+            //on newly created Transfers the piece_count is set 0. before save
+            //calculate the actuall piece_count
             if ($this->piece_count == 0)
-                $this->pieceCount = $this->calculatePiceCount($this->piece_size, $this->file_size);
+                $this->piece_count = $this->calculatePiceCount($this->piece_size, $this->file_size);
 
             $this->setTimeout();
         }
@@ -187,6 +189,12 @@ class BTransfer extends EBasiinActiveRecord
             return $this->timeout;
         }
 
+        /**
+         *  Set up the transfer's basic parameters
+         * @param string $varName
+         * @param integer $dataLength
+         * @param integer $pieceLength
+         */
         public function initialize(string $varName, integer $dataLength, integer $pieceLength){
 
             $this->variable_name = $varName;
@@ -202,7 +210,7 @@ class BTransfer extends EBasiinActiveRecord
          * @param string $varName
          * @return string
          */
-        public function generateFileName($varName){
+        public function generateFileName(string $varName){
             $incommingDir = Yii::getPathOfAlias('basiin.incomming');
             $fileName = sha1( $varName. microtime() .$this->transaction->id );
 
@@ -213,9 +221,13 @@ class BTransfer extends EBasiinActiveRecord
         }
 
 
-        public function calculatePieceCount($pieces,$size){
-            
+        /**
+         *  Calculate the number of pieces required
+         * @param integer $pieces   length of the pieces
+         * @param integer $size     lenght of the transfer data
+         * @return integer
+         */
+        public function calculatePieceCount(integer $pieces, integer $size){
             return ceil( $size / $pieces);
-
         }
 }

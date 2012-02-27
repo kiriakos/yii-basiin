@@ -39,6 +39,7 @@ class BasiinModule extends CWebModule
          */
 	public function afterControllerAction($controller, $action)
 	{
+                
                 $shutDown = Basiin::shutDown();
 
                 if($shutDown === FALSE)
