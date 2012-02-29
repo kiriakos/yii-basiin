@@ -1,5 +1,15 @@
-function(tr){
-
+/**
+ * The transfer object, instantiated ONLY by basiin.transfer(options)
+ *
+ * @property string tag     the identifier of the transfer, not ID since you can manually assign
+ * @property string data    the data (in string representation) that is to be transfered
+ * @property array  pieces  an array of pieces that is data split into sendable chunks
+ * @property float progress    the percentage 0-1 the transfer has progressed
+ * @method   string status  returns the string version of the Transfers state
+ *
+ */
+function Transfer (tr) // tr = init options object
+{
     //generate a tag via _hash and assign it to tr.tag
     var _reTag = function (tr){
         tr.tag = _hash(Math.random());
@@ -25,6 +35,7 @@ function(tr){
         }
         return false;
     };
+
     //return a piece{index,data} that hasn't been transfered yet
     var _getPiece = function(obj){
         for (index = 0; index< tr.pieces.length; index++){
@@ -38,13 +49,20 @@ function(tr){
         return false;
     };
 
+    /**
+     *calculates the maximum length a piece's data can have
+     *based on the maximum url length a src attribute can have
+     *@return integer
+     */
+    function _calculatePieceLength(){return 1000 - tr.url;}
+    
     //piece prototype:
     $__Piece
     
     //Initialize the transfer object with default values + args
     var init = function (tr){
         if (tr.onComplete == undefined) tr.onComplete = false;
-        if (!tr.pieceL) tr.pieceL = _loader.calculatePieceLength(tr.url);
+        if (!tr.pieceL) tr.pieceL = _calculatePieceLength();
 
         while(_loader.getTransfer({'tag':tr.tag})){
             tr = tr.reTag();

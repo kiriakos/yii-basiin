@@ -24,13 +24,14 @@ class InitController extends Controller
          */
         public function actionInit($action = 'controllers', $random = null)
 	{
-
             //set transaction ID
             $transaction = Basiin::newTransaction();
             //$iss = (isset($transaction->_e['onafterconstruct']));
             //save the transaction after all it's changes are done.
             $transaction->save();
 
+            //die(var_dump($transaction->id));
+            
             //put the id's of other active transactions in session into an array
             $trs = array();
             foreach (Basiin::getTransactions() as $tr)
@@ -43,7 +44,7 @@ class InitController extends Controller
                 'transfers'=> array(
                     'maxTransferSize' => Basiin::MaxTransferSize,
                 ),
-                'jsFiles'=>array(
+                'initFiles'=>array(
                     array(
                         'tag'=>'jQuery',
                         'file'=>'jquery-1.7.1.min.js',

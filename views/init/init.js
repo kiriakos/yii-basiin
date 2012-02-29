@@ -2,16 +2,17 @@
 // replaced with data from the utilized controller
 
 // don't litter namespace //var $transaction__id =
-(function( debug ){
+(function(){
     /***************************************************************************
      * Private
      **************************************************************************/
     var basiin = null;
+    var debug =  $debug;
     var _dbglvl = $debuglvl; //higher == more verbose 0 == invalid 5 == max
     var _initialized = false;
     var _transaction = {
         'id': "$transaction__id" , 'transactions': $transactions,
-        'afterInit': "$command", //somethign to execute afer basiin loads
+        'afterInit': "$command", //action to execute afer basiin loads
         'timeout': $transaction__ttl,
         'server': {
             'location': "$homeDomain",
@@ -24,7 +25,7 @@
         'maxElements': "$transaction__maxElements" //browser load limit
     };
 
-    var $__hash
+    $__hash
 
     /**
      *Returns a _hash of str which can be used as a javascript variable
@@ -72,14 +73,16 @@
         return false;
     }
 
-    var $__loader
-    var $__elements
+    $__loader
+    $__elements
 
     /**
      * Extend the basiin object with item accesible through tag
      */
     var _extend = function(tag,item, overwrite){
-        if (basiin[tag] === undefined || overwrite)basiin[tag] = item;
+        if (basiin[tag] === undefined || overwrite) basiin[tag] = item;
+
+        return basiin[tag] === item;
     }
 
     
@@ -87,4 +90,4 @@
      * Public interface
      **************************************************************************/
     return $__interface
-})( $debug ).init();
+})().init();

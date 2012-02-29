@@ -60,6 +60,10 @@
     init.js:        added _varHash function (generate randomized valid varnames)
 
 
+2012 - 02 - 29
+    init.js*:       all js files that extend must be in the form of a closure
+                    var $file = (function(args{return {interface} }))()
+
 TODO: transaction cleanup on max
       transaction cleanup on interval
       same for transfers

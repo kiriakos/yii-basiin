@@ -14,8 +14,8 @@
  */
 class BTransaction extends EBasiinActiveRecord
 {
-        
-	/**
+
+        /**
 	 * Returns the static model of the specified AR class.
 	 * @return Transaction the static model class
 	 */
@@ -160,6 +160,20 @@ class BTransaction extends EBasiinActiveRecord
      *************************** Functionality ********************************
      **************************************************************************/
 
+
+        /**
+         *  return the AR id, probably this was protected since it's a Primary key
+         * $return integer
+         */
+        public function getId(){ return $this->id; }
+
+        /**
+         * Return the trasaction's TTL
+         *
+         * Wrapper function to Basiin::TransactionTTL
+         * @return integer
+         */
+        public function getTTL(){ return Basiin::TransactionTTL; }
 
         /**
          *  The path to which to send data to

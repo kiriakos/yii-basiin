@@ -282,7 +282,7 @@ class Basiin{
      * @return mixed
      */
     public static function renderFile($file, $controller, $data = NULL, $returnOutput = FALSE, $stopOnError = FALSE){
-
+        
         $absFile = self::findViewFile($controller, $file, TRUE);
         
         $output = $controller->renderFile($absFile, NULL, TRUE);
@@ -290,22 +290,26 @@ class Basiin{
         //NOTE: to use $var in render files you have to precede it by whitespace
         //even if it is doubleqouted
         //match files
-        $regexp = '/\s"?\$__([[:alnum:]]+)"?/';
-        while (preg_match_all($regexp, $output, $files)){
+        $matchFiles = '/\s"?\$__([[:alnum:]]+)"?/';
+        while (preg_match_all($matchFiles, $output, $files)){
+            
             foreach ($files[1] as $filee){
                 $absFile = self::findViewFile($controller, $controller->id.'.'.$filee, FALSE);
                 if ($absFile)
                     $output = str_replace ('$__'.$filee, file_get_contents ($absFile), $output);
+                else
+                    $output = str_replace ('$__'.$filee, '', $output);
             }
         }
+        
         //match $word__prop to data[$word]->prop
-        $regexp = '/\s"?(\$[[:alnum:]]+__[[:alnum:]]+)"?/';
-        preg_match_all($regexp, $output, $objects);
+        $matchObjects = '/\s"?(\$[[:alnum:]]+__[[:alnum:]]+)"?/';
+        preg_match_all($matchObjects, $output, $objects);
         
         //match $word to data[$word]
-        $regexp = '/\s"?(\$[[:alnum:]]+)"?(?:[^[:alnum:]_\-\.])/';
+        $matchVars = '/\s"?(\$[[:alnum:]]+)"?(?:[^[:alnum:]_\-\.])/';
         ////ends @ - also, should be ok since hyphen chars are not allowed in js vars
-        preg_match_all($regexp, $output, $vars);
+        preg_match_all($matchVars, $output, $vars);
 
         
         $output = self::replaceRenderedObjects( $output, $data, $objects[1], $stopOnError );
@@ -329,12 +333,16 @@ class Basiin{
      * @return string
      */
     private static function replaceRenderedObjects( $renderProduct, $data, $objects, $stopOnError){
+        //uniquify & sort $vars array. Revesre sort so biggest varName is first
+        $objects = array_unique($objects);
+        rsort($objects);
 
+        // replaces $vars with data
         foreach($objects as $object){ 
             $arr = explode('__', $object); // '$word__prop' := {'$word', 'prop'}
-            $arr[0] = substr($arr[0], 1);
-            
-            if ( count($arr) == 2 && 
+            $arr[0] = substr($arr[0], 1); //remove $ sign
+
+            if ( count($arr) == 2 &&
                     isset($data[$arr[0]]) &&
                     is_object($data[$arr[0]]) &&
                     (
@@ -369,17 +377,23 @@ class Basiin{
      * @return string
      */
     private static function replaceRenderedVars ($renderProduct, $data, $vars, $stopOnError){
+        //uniquify & sort $vars array. Revesre sort so biggest varName is first
+        $vars = array_unique($vars);
+        rsort($vars);
+
+        // replaces $vars with data
         foreach ($vars as $var){
             $varName = substr($var, 1);// $varName -> varName
+            
             if (isset($data[$varName])){
                 if (is_string($data[$varName]))
-                    $renderProduct = str_replace($var, $data[$varName], $renderProduct);
+                    $renderProduct = str_replace ($var, $data[$varName], $renderProduct);
                 else
-                    $renderProduct = str_replace($var, CJavaScript::encode ($data[$varName]), $renderProduct);
+                    $renderProduct = str_replace ($var, CJavaScript::encode ($data[$varName]), $renderProduct);
             }elseif($stopOnError){
                 throw new CHttpException(500, "the data {$var} could not be found", 007);
             }else{
-                $renderProduct = str_replace($var, 'null', $renderProduct);
+                $renderProduct = str_replace ($var, 'null', $renderProduct);
             }
         }
 

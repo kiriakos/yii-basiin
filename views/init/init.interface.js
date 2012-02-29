@@ -1,5 +1,5 @@
-    (function(){
-        return{
+(function(){
+    return{
         'transaction': function(){return _transaction},
         'hash': function(){return _hash()},
 
@@ -66,6 +66,7 @@
             return this.loader.confirmInstall(tag);
         },
         'init': function (){
+
             if (!_initialized){ // check w init var
                 _initialized = true;
                 _log('basiin transaction '+_transaction.id+' initializing,')
@@ -89,7 +90,7 @@
         'bw': function (){
             return _loader.hasBandwidth();
         },
-        'x': function (tag, item){ 
+        'x': function (tag, item){
             _extend(tag,item, false);
         }
 
