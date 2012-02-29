@@ -63,6 +63,7 @@
 2012 - 02 - 29
     init.js*:       all js files that extend must be in the form of a closure
                     var $file = (function(args{return {interface} }))()
+    init.File.js:   created & completed (File object is fully functional)
 
 TODO: transaction cleanup on max
       transaction cleanup on interval

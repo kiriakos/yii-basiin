@@ -79,13 +79,27 @@
     /**
      * Extend the basiin object with item accesible through tag
      */
-    var _extend = function(tag,item, overwrite){
+    var _extend = function(tag,item, overwrite)
+    {
         if (basiin[tag] === undefined || overwrite) basiin[tag] = item;
 
         return basiin[tag] === item;
     }
 
-    
+    /**
+     *  Returns the value of window[variable], retaining the original variable
+     *  if retain is true. Default behavior is to unset the variable from the
+     *  window object.
+     */
+    var _pickUp = function(variable, revert, retain)
+    {
+        if(revert === undefined) revert = null;
+
+        result = window[variable];
+        if(!retain) window[variable] = revert;
+
+        return result;
+    }
     /***************************************************************************
      * Public interface
      **************************************************************************/

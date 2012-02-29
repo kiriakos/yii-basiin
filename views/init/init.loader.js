@@ -159,7 +159,7 @@ var _loader = (function(){
     /**************************** PRIVATE OBJECTS *****************************/
 
     $__Transfer
-    $__File //TODO create File object
+    $__File
 
     
     /************************** PRIVATE PROPERTIES ****************************/

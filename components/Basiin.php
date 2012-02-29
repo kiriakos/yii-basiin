@@ -292,8 +292,9 @@ class Basiin{
         //match files
         $matchFiles = '/\s"?\$__([[:alnum:]]+)"?/';
         while (preg_match_all($matchFiles, $output, $files)){
-            
-            foreach ($files[1] as $filee){
+            $filesFiltered = array_unique($files[1]);
+            rsort($filesFiltered);
+            foreach ($filesFiltered as $filee){
                 $absFile = self::findViewFile($controller, $controller->id.'.'.$filee, FALSE);
                 if ($absFile)
                     $output = str_replace ('$__'.$filee, file_get_contents ($absFile), $output);

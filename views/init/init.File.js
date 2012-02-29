@@ -60,9 +60,7 @@ function File(o)
         {
             result = function(){
                 _log("file: "+ _params.tag +" file.onload fired");
-                r = _extend(_params.tag, window[_params.varName], true);
-                //TODO: figure out how to pass a copy of var so that:
-                //      window[_params.varName] can be unset afterwards
+                r = _extend(_params.tag, _pickUp(_params.varName), true);
                 
                 if (r) _state = _states.installed;
                 return r;
@@ -89,7 +87,6 @@ function File(o)
     if (_params.varName == null) _params.varName = _varHash(_params.tag);
 
     /* init */
-    _log('creating file: ' + JSON.stringify(_params) );
     function _init(){
         /* placeholder */
     }
