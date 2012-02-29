@@ -24,9 +24,10 @@ class InitController extends Controller
          */
         public function actionInit($action = 'controllers', $random = null)
 	{
+
             //set transaction ID
             $transaction = Basiin::newTransaction();
-
+            //$iss = (isset($transaction->_e['onafterconstruct']));
             //save the transaction after all it's changes are done.
             $transaction->save();
 
