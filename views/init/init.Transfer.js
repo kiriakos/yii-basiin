@@ -8,23 +8,29 @@
  * @method   string status  returns the string version of the Transfers state
  *
  */
-function Transfer (tr) // tr = init options object
+function Transfer (o) // tr = init options object
 {
+    /*************************** PRIVATE METHODS ******************************/
+
+    /* Controll */
+
     //generate a tag via _hash and assign it to tr.tag
-    var _reTag = function (tr){
-        tr.tag = _hash(Math.random());
-        return tr;
-    };
+    function _reTag ()
+    {
+        _params.tag = _hash(Math.random());
+    }
 
     //generate script packets to send to server
-    var _proceedTransfer = function (){
+    function _proceedTransfer ()
+    {
         while (_loader.hasBandwidth() && _getPiece({'pending':true}))
             _sendPiece();
-    };
+    }
 
     //dispatch a piece of data to the server
-    var _sendPiece = function(){
-        if(_state==2){ //while transfer state is in transfering        
+    function _sendPiece ()
+    {
+        if(_state==2){ //while transfer state is in transfering
                 var piece = _getPiece({'pending':true}); // obj{id,data}
 
                 if (piece) piece.send();
@@ -34,10 +40,58 @@ function Transfer (tr) // tr = init options object
                 return piece;
         }
         return false;
-    };
+    }
 
+
+    /**
+     *  Start or resume the transfering of Pieces
+     */
+    function _start ()
+    {
+        if (_state == _states.queued){
+            _state = _states.transfering;
+            _proceedTransfer();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     *  Pause the transfering of pieces
+     */
+    function _pause ()
+    {
+        if (_state == _states.transfering){_state = _states.paused; return true;}
+        return false;
+    }
+
+
+
+
+    /* Query */
+
+    function _getProgress(){ //returns progress percentage
+        var t = 0;var l;
+        var pT = l = _params.pieces.length;
+        while (l--) {if (_params.pieceStatus[l] == true) t++;}
+        return t/pT;
+    }
+
+    function _isCompleted ()
+    {
+        if (_state != 3){
+            for (var i=0; i<tr.pieces.length; i++){
+                if (!tr.pieces[i].completed()) return false;
+            }
+
+            _state=3;
+            return true;
+        }
+        return true;
+    }
     //return a piece{index,data} that hasn't been transfered yet
-    var _getPiece = function(obj){
+    function _getPiece (obj)
+    {
         for (index = 0; index< tr.pieces.length; index++){
             var hit = true; var piece = tr.pieces[index];
             for (var i in obj){
@@ -47,7 +101,7 @@ function Transfer (tr) // tr = init options object
             if (hit) return piece;
         }
         return false;
-    };
+    }
 
     /**
      *calculates the maximum length a piece's data can have
@@ -55,60 +109,76 @@ function Transfer (tr) // tr = init options object
      *@return integer
      */
     function _calculatePieceLength(){return 1000 - tr.url;}
+
     
+
+
+    /**************************** PRIVATE OBJECTS *****************************/
+
     //piece prototype:
     $__Piece
-    
-    //Initialize the transfer object with default values + args
-    var init = function (tr){
-        if (tr.onComplete == undefined) tr.onComplete = false;
-        if (!tr.pieceL) tr.pieceL = _calculatePieceLength();
 
-        while(_loader.getTransfer({'tag':tr.tag})){
-            tr = tr.reTag();
-        }
-        return tr;
-    }
-    tr = init(tr);
+    /************************** PRIVATE PROPERTIES ****************************/
+
+    //state variable and dictionary
+    var _states={ 'queued':1, 'transfering':2, 'complete':3 };
+    var _state=0;
+    var _params = {'tag':null,'data':null,'started':null,'idle':null}
+    var _initialized = false; 
+    
+    /******************************** INIT ************************************/
+
+    //overwrite the defaults with the base arguments `o'
+    for(option in o){_params[option] = o[option]}
+
+    //Initialize the transfer object with default values + args
+    if (_params.onComplete == undefined) _params.onComplete = false;
+    if (!_params.pieceL) _params.pieceL = _calculatePieceLength();
+
+    while(_loader.getTransfer({'tag':_params.tag})){_reTag();}
+
 
     //create the pieces array that holds the data packets
-    var _regex = new RegExp('.{1,'+ tr.pieceL +'}', 'g'); //regex for datasplit
-    tr.data = encodeURIComponent(tr.data);
-    tr.pieces= tr.data.match(_regex);
+    var _regex = new RegExp('.{1,'+ _params.pieceL +'}', 'g'); //regex for datasplit
+    _params.data = encodeURIComponent(_params.data);
+    _params.pieces = _params.data.match(_regex);
 
     //translate pieces array into array of Piece objects
-    for (var i=0; i<tr.pieces.length;i++){
-        tr.pieces[i]= new Piece(i, tr.pieces[i])
+    for (var i=0; i<_params.pieces.length;i++){
+        _params.pieces[i]= new Piece(i, _params.pieces[i])
+        //TODO: shift to lazy Piece generation this will consume way too much
+        //      resources for large transfers
     }
 
-    //array of statuses descibing the transfer status of each piece in pieces
-    tr.pieceStatus = (function(pT){ 
+    //array of statuses describing the transfer status of each piece in pieces
+    //TODO: why not DEPRECATED? Pieces themselves should have this data
+    tr.pieceStatus = (function(pT){
         var pS = new Array(pT);
         var i = pT;
         while (i--) {pS[i] = false;}
         return pS;
     })(tr.pieces.length);
 
-    //state variable and dictionary
-    var _states={0:'stopped', 1:'queued', 2:'transfering', 3:'complete'};
-    var _state=0;
-
+    _initialized = true;
     
-    /**
-     *Public Interface
-     */
-    return{
-        'tag':function(){return tr.tag;},
-        'reTag':function(){return _reTag()},
-        'data':function(){return tr.data;},
-        'pieces':function(){return tr.pieces;},
-        'progress':function(){ //returns progress percentage
-            var t = 0;var l;
-            var pT = l = tr.piecesTotal;
-            while (l--) {if (tr.pieceStatus[l] == true) t++;}
-            return t/pT;
-        },
-        'onComplete':function(){return tr.onComplete},
+    /****************************** INTERFACE *********************************/
+    
+    var _interface = {
+        /* Controll*/
+        'reTag': _reTag,
+        'start': _start,
+        'pause': _pause,
+        'erase': undefined,
+        'sendPiece': _sendPiece, //DEPRECATED?
+
+
+        
+        /* Query */
+        'tag':function(){return _params.tag;},
+        'data':function(){return _params.data;},
+        'pieces':function(){return _params.pieces;},
+        'progress': _getProgress,
+        'onComplete':function(){return _params.onComplete},
         'status': function(){return _states[_state];},
         'pieceComplete':function(piece, next){
             tr.pieceStatus[piece] = true;
@@ -117,32 +187,10 @@ function Transfer (tr) // tr = init options object
             }
         },
 
-        'start': function(){ //Bool: start|resume the transfering of files
-            if (_state == 1){
-                _state = 2;
-                _proceedTransfer();
-                return true;
-            }
-            return false;
-        },
-        'pause': function(){//Bool: pause transfering Transfer
-            if (_state == 2){_state = 1;return true;}
-            return false;
-        },
-        'erase': function(){
-            //TODO: implement a data wiping mechanism for the server side
-            return undefined;
+        
 
-        },
-
-        /**
-         *Sends a piece of the available pool to the server
-         *DEPRECATED?
-         */
-        'sendPiece': function(){
-            return _sendPiece();
-        },
-
+        
+        //DEPRECATED, only the pieces themselves need to know of that
         'sentPiece': function(index){
             _log( tr.tag + ' piece '+index+ ' successfully delivered');
             
@@ -152,17 +200,7 @@ function Transfer (tr) // tr = init options object
             
         },
 
-        'completed':function(){
-            if (_state != 3){
-                for (var i=0; i<tr.pieces.length; i++){
-                    if (!tr.pieces[i].completed()) return false;
-                }
-                
-                _state=3;
-                return true;
-            }
-            return true;
-        },
+        'completed':_isCompleted,
 
         /**
          * shift
@@ -182,4 +220,8 @@ function Transfer (tr) // tr = init options object
             return this;
         }
     }
+
+    /******************************** RETURN **********************************/
+
+    return _interface;
 }

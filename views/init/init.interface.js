@@ -7,12 +7,11 @@
          * Public interface to _loader the facility that handles transfers
          */
         'loader':{
-            'files':function(){return _loader.files;},
             /**
-             * transfer {data} to server using {tag}
+             * transfer {tr.data} to server using {tr.tag}
              *
              * Basiin is based on the concept that whatever data is supposed to go
-             * from the cient to the home server (the one that started the basiin
+             * from the client to the home server (the one that started the basiin
              * session) is first going to the basiin server reciever. After
              * completion of the transfer you can call some other Basiin command
              * that will use the data simply by getting the data's {tag}
@@ -22,7 +21,7 @@
             'transfer':function(tr){
                 //instantiate a new _transfer obj and put it inside the transfers array
                 _log('loader.transfer: creating Transfer object');
-                var transfer = (new _loader.Transfer(tr)).init();
+                var transfer = _loader.transfer(tr);
 
                 _log('loader.transfer: enqeueing Transfer object');
                 return transfer.enque();
@@ -59,14 +58,18 @@
             var tr = this.loader.transfer(trstub);
             return tr;
         },
-        'install': function(tag, file){ // wrapper of loader.install()
+
+        //install a file
+        'install': function(tag, file)
+        {   // wrapper of loader.install()
             this.loader.install({'tag':tag, 'file':file})
         },
-        'confirmInstall': function(tag){//wrapper of loader.confirmInstall()
-            return this.loader.confirmInstall(tag);
-        },
-        'init': function (){
 
+        /**
+         * Initialize the framework and touchdown @ bajiin if in debug mode
+         */
+        'init': function ()
+        {
             if (!_initialized){ // check w init var
                 _initialized = true;
                 _log('basiin transaction '+_transaction.id+' initializing,')
@@ -83,6 +86,7 @@
             }
             return this;
         },
+
         'eval': function(str){
             if (debug) return eval(str);
             else return undefined;

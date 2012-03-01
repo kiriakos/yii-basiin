@@ -58,7 +58,7 @@ var _elements = (function(){
         },
 
 
-        'removeSelf': function(){ //deprecated?
+        'removeSelf': function(){ //NOT deprecated, used by init()
             var scripts = document.getElementsByTagName('script');
             var regex = new RegExp(_transaction.server.basiin+'/init');
             

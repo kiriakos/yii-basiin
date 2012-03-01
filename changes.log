@@ -68,3 +68,5 @@
 TODO: transaction cleanup on max
       transaction cleanup on interval
       same for transfers
+      prettyfy init.elements.js (it is just an object now)
+      pretyfy init.Transfer.js  (I think init.File.js has a good layout, try it)

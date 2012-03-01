@@ -45,35 +45,22 @@ var _loader = (function(){
      *
      * returns file
      */
-    function _install(file)
+    function _install(fileOptions)
     {
-        _log( 'installing: '+file.tag );
+        _log( 'installing: '+fileOptions.tag );
         // create a script tag with the route request to the file
         // the script tag gets an onLoad(this.loader.) hook)
-        file.element = _elements.script( ["file", file.file], file.onLoad);
-        file.status = 'loading';
-
+        file = new File (fileOptions);
+        file.install();
+        
         return file;
     }
 
-    /**
-     * Chane file tag's status to instlled
-     *
-     * TODO: find out if this should remain as is or become deprecated in favor
-     *       of self installation via script.load() event that reffernces the
-     *       File object.
-     * TODO: define a File object that will be created by _loader
-     */
-    function _confirmInstall(tag)
+    function _transfer(tr) //tr = the transfers base parameters
     {
-        _log( 'confiming install of: '+tag)
+        transfer = new Transfer (tr);
 
-        for (var i=0; i>_assets.files.length;i++){
-            if (_assets.files[i].tag == tag){
-                _assets.files[i].status = 'installed';
-                _loader.processQueues();
-            }
-        }
+        return transfer;
     }
 
     /**
@@ -101,12 +88,12 @@ var _loader = (function(){
         var settings={'defined':false, 'all':false}; //defaults
         if (options) for (var oattr in options) {settings[oattr] = options[oattr]} //apply options
 
-        _log( 'getting '+ type+ ':'+ JSON.stringify(condition) , 4 );
+        _log( '_loader.getAssets '+ type+ ':'+ JSON.stringify(condition) , 5);
 
         // query assets
         var assets = _assets[type];
-        _log('assets= '+ assets.length,5);
         var hits=[];
+        
         for (var i=0; i<assets.length; i++){ //loop assets
             var asset = assets[i];
             var isHit = true;
@@ -125,8 +112,12 @@ var _loader = (function(){
                 return asset;
         }
 
+
         if (hits.length == 0)
+        {
+            _log ("_loader.getAssets " + type + ': no hits this time.', 5);
             return false;
+        }
         else
             return hits;
     }
@@ -214,17 +205,14 @@ var _loader = (function(){
         'createURL' : _createURL,
         'hasBandwidth': _hasBW,
         'install': _install,
-        'confirmInstall': _confirmInstall,
+        'transfer': _transfer,
+
         'getFile': _getFile,
         'getTransfer': _getTransfer,
         'processQueues': _processQueues,
         
         'init': _init
-
-        //DEPRECATED: these shouldn't be used any more.
-        //'files': _files, //getFile & getTransfer should access the private properties instead
-        //'transfers': _transfers
-}
+    }
 
     /******************************** RETURN **********************************/
     return _interface;
