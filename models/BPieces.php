@@ -92,12 +92,12 @@ class BPieces extends EBasiinActiveRecord
          * @param integer $length
          * @return string
          */
-        public function createPieceString(integer $length){
+        public function createPieceString($length){
             $arr = array();
             //create an array of $length
-            while (count($arr) > $length)
+            while (count($arr) < $length)
                 $arr[]=0;
-
+            
             //return imploded array
             return implode('', $arr);
         }
@@ -108,7 +108,7 @@ class BPieces extends EBasiinActiveRecord
          * @param integer $index
          * @return boolean
          */
-        public function getRecieved(integer $index){
+        public function getRecieved($index){
             return ( substr($this->pieces, $index -1 , 1) == 1 );
         }
 
@@ -117,7 +117,7 @@ class BPieces extends EBasiinActiveRecord
          * @param integer $index
          * @return string 
          */
-        public function setRecieved(integer $index){
+        public function setRecieved($index){
 
             if ($index<1 || $index > strlen($this->pieces) ) return false;
 

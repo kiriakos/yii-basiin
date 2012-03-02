@@ -141,6 +141,7 @@ class BTransfer extends EBasiinActiveRecord
          * @param CEvent $event
          */
         public function  onAfterConstruct($event) {
+            die('oAC');
             parent::onAfterConstruct($event);
         }
 
@@ -148,10 +149,27 @@ class BTransfer extends EBasiinActiveRecord
          *  Prepare the transfer object for saving
          * @param CEvent $event
          */
-        public function  onBeforeSave($event) {
-            parent::onBeforeSave($event);
+        public function  onBeforeValidate($event) {
+            
+            if(parent::onBeforeValidate($event))
+            {
+                $success = true;
+                
+                $this->setTimeout();
 
-            $this->setTimeout();
+                if(!$this->pieces)
+                {
+                    $pieces = new BPieces ();
+                    $pieces->transfer_id = $this->id;
+                    $pieces->pieces = $pieces->createPieceString($this->piece_count);
+                    $success = $pieces->save();
+
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         /**
@@ -159,14 +177,10 @@ class BTransfer extends EBasiinActiveRecord
          * @param CEvent $event
          */
         public function  onAfterSave($event) {
+            die('oAS');
             parent::onAfterSave($event);
 
-            if(!$this->pieces){
-                $pieces = new BPieces ();
-                $pieces->transfer_id = $this->id;
-                $pieces->pieces = $pieces->createPieceString($this->piece_count);
-            }
-            $this->pieces->save();
+            //return $this->pieces logic from onBeforeSave
         }
 
     /**************************************************************************

@@ -44,9 +44,8 @@ class TransferController extends Controller
 
             if (Basiin::canAcceptTransfer($dataLength,$pieceLength))
                  $transfer = $transaction->newTransfer($varName,$dataLength,$pieceLength);
-                 
-            die(var_dump(isset($transfer->variable_name)));
-            //die(var_dump(property_exists($transfer, 'variable_name')));
+
+            
 
             $rendered = Basiin::renderFile(
                         'new',$this,array(

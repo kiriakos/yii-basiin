@@ -350,7 +350,7 @@ class Basiin{
                     isset($data[$arr[0]]) &&
                     is_object($data[$arr[0]]) &&
                     (
-                        property_exists ( $data[$arr[0]] , $arr[1] ) ||
+                        isset ( $data[$arr[0]]->$arr[1] ) ||
                         method_exists($data[$arr[0]], 'get'.  ucfirst($arr[1]))
                     )
                 ){

@@ -214,6 +214,7 @@ class BTransaction extends EBasiinActiveRecord
             $transfer = new BTransfer();
             $transfer->initialize($varName, $dataLength, $pieceLength, $this->id);
 
+            
             $transfer->save();
 
             return $transfer;

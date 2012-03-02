@@ -1,14 +1,18 @@
 /**
  * The transfer object, instantiated ONLY by basiin.transfer(options)
  *
- * @property string tag     the identifier of the transfer, not ID since you can manually assign
- * @property string data    the data (in string representation) that is to be transfered
- * @property array  pieces  an array of pieces that is data split into sendable chunks
- * @property float progress    the percentage 0-1 the transfer has progressed
- * @method   string status  returns the string version of the Transfers state
+ *
+ *  Initialize:
+ *  object o:           options object
+ *  boolean encodeData: if set to false init() will skip URLencoding 
+ *
+ * @method string tag     the identifier of the transfer, not ID since you can manually assign
+ * @method string o.data    the data (in string representation) that is to be transfered
+ * @method float progress    the percentage 0-1 the transfer has progressed
+ * @method string status  returns the string version of the Transfers state
  *
  */
-function Transfer (o) // tr = init options object
+function Transfer (o, encodeData) // tr = init options object
 {
     /*************************** PRIVATE METHODS ******************************/
 
@@ -23,7 +27,7 @@ function Transfer (o) // tr = init options object
     //generate script packets to send to server
     function _proceed ()
     {
-        while (_loader.hasBandwidth() &&  (packet = _getPacket()) )
+        while (_loader.hasBandwidth() && (packet = _getPacket()) )
             packet.send();
     }
 
@@ -40,7 +44,7 @@ function Transfer (o) // tr = init options object
 
         //the new/tell call will return an object with: tranferId
         var onLoad = function(){
-            _announceResponse(window[_params.variable])
+            return _announceResponse(window[_params.variable])
         };
 
         _elements.script(
@@ -60,6 +64,9 @@ function Transfer (o) // tr = init options object
         _anounced = true;
 
         _log('transfer: '+ _params.tag+ " announced associated with server side Id: "+ _params.serverSideId);
+
+        _state = _states.queued;
+
         return true;
     }
 
@@ -70,7 +77,7 @@ function Transfer (o) // tr = init options object
     {
         if (_state == _states.queued){
             _state = _states.transfering;
-            _proceedTransfer();
+            _proceed();
             return true;
         }
         return false;
@@ -129,7 +136,8 @@ function Transfer (o) // tr = init options object
      */
     function _getPacket ()
     {
-        if (_params.packets.count == _params.packetsTotalNeeded)
+        _log('Packet count:'+ _params.packets.length);
+        if (_params.packets.length == _params.packetsTotalNeeded)
             return false;
 
         //get the next piece from _params.data
@@ -143,7 +151,7 @@ function Transfer (o) // tr = init options object
         //create a new packet with that piece
         var packet = new Packet ( url )
         _params.packets.push(packet); //don't forget this, else all packets will send the same data
-        
+        _log('Packets created:'+ _params.packets.length);
         return packet;
     }
 
@@ -158,7 +166,9 @@ function Transfer (o) // tr = init options object
     //state variable and dictionary
     var _states={'paused':-1, 'created':0, 'announcing':1, 'queued':2,
                     'transfering':3, 'complete':4};
-    var _state=0;
+
+    var _state=_states.created;
+    
     var _announced = false; //modified only by announce() and it's load function
     var _params = { //undefined here means things that are not overwritable
                     'tag':null,
@@ -195,11 +205,12 @@ function Transfer (o) // tr = init options object
         while(_loader.getTransfer({'variable':_params.variable})){_reHash('variable');}
 
         //create the pieces array that will hold the data packets after they are created
-        _params.data = encodeURIComponent(_params.data);
+        if(encodeData !== false) _params.data = encodeURIComponent(_params.data);
         
         var urlLength =  _loader.createURL(_params.packetUrl).length+ 1+ _transaction.idDigits+ 1;
         _params.packetSize = _browser.MaxUrlLength - urlLength;
         _params.packetsTotalNeeded = Math.ceil(_params.data.length / _params.packetSize);
+        
         _params.packets= []; // _getPiece pushes to this
 
         _log('Packet size is '+_params.packetSize+ " characters");
