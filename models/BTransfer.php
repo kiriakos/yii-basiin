@@ -113,7 +113,11 @@ class BTransfer extends EBasiinActiveRecord
          * @return string
          */
         public function defaultScope(){
-            return 'withPieces';
+            return array(
+                    'with'=>'pieces',
+                    'together'=>'true',
+                    'condition'=>'t.timeout > '.time(),
+                );
         }
 
         public function scopes(){
@@ -122,7 +126,7 @@ class BTransfer extends EBasiinActiveRecord
                 'withPieces'=>array(
                     'with'=>'pieces',
                     'together'=>'true',
-                    'criteria'=>'timeout > '.time(),
+                    'condition'=>'t.timeout > '.time(),
                 ),
             );
         }
@@ -138,9 +142,6 @@ class BTransfer extends EBasiinActiveRecord
          */
         public function  onAfterConstruct($event) {
             parent::onAfterConstruct($event);
-            $this->started = time();
-            $this->piece_count=0;
-            $this->piece_size=0;
         }
 
         /**
@@ -149,11 +150,6 @@ class BTransfer extends EBasiinActiveRecord
          */
         public function  onBeforeSave($event) {
             parent::onBeforeSave($event);
-
-            //on newly created Transfers the piece_count is set 0. before save
-            //calculate the actuall piece_count
-            if ($this->piece_count == 0)
-                $this->piece_count = $this->calculatePiceCount($this->piece_size, $this->file_size);
 
             $this->setTimeout();
         }
@@ -178,6 +174,16 @@ class BTransfer extends EBasiinActiveRecord
      **************************************************************************/
 
         /**
+         *  return the AR id, probably this was protected since it's a Primary key
+         * $return integer
+         */
+        public function getId()
+        { return str_pad( (string)$this->id, Basiin::IdDigits, '0', STR_PAD_LEFT); }
+        
+        public function getVariable_name()
+        { return (string)$this->variable_name; }
+
+        /**
          * Set timeout
          */
         public function setTimeout(){
@@ -195,12 +201,17 @@ class BTransfer extends EBasiinActiveRecord
          * @param integer $dataLength
          * @param integer $pieceLength
          */
-        public function initialize(string $varName, integer $dataLength, integer $pieceLength){
+        public function initialize( $varName, $dataLength, $pieceLength, $transactionId ){
 
+            $this->transaction_id = $transactionId;
             $this->variable_name = $varName;
             $this->piece_size = $pieceLength;
             $this->file_size = $dataLength;
-            $this->file_name = $this->generateFileName($varName);
+            $this->file_name = $this->generateFileName($varName, $transactionId);
+            $this->piece_count = $this->calculatePieceCount($pieceLength, $dataLength);
+            $this->started = time();
+            $this->timeout = time();
+
             touch(Yii::getPathOfAlias('basiin.incomming.'.$this->file_name));
 
         }
@@ -210,12 +221,12 @@ class BTransfer extends EBasiinActiveRecord
          * @param string $varName
          * @return string
          */
-        public function generateFileName(string $varName){
+        public function generateFileName( $varName, $transactionId){
             $incommingDir = Yii::getPathOfAlias('basiin.incomming');
-            $fileName = sha1( $varName. microtime() .$this->transaction->id );
+            $fileName = sha1( $varName. microtime(). $transactionId );
 
             while ( file_exists($incommingDir.DIRECTORY_SEPARATOR.$fileName) )
-                $fileName = sha1( $varName. microtime() .$this->transaction->id );
+                $fileName = sha1( $varName. microtime(). $transactionId );
 
             return $fileName;
         }
@@ -227,7 +238,7 @@ class BTransfer extends EBasiinActiveRecord
          * @param integer $size     lenght of the transfer data
          * @return integer
          */
-        public function calculatePieceCount(integer $pieces, integer $size){
-            return ceil( $size / $pieces);
+        public function calculatePieceCount( $pieces, $size){
+            return (integer) ceil( $size / $pieces);
         }
 }

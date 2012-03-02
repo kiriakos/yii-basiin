@@ -165,7 +165,8 @@ class BTransaction extends EBasiinActiveRecord
          *  return the AR id, probably this was protected since it's a Primary key
          * $return integer
          */
-        public function getId(){ return $this->id; }
+        public function getId()
+        { return str_pad( (string)$this->id, Basiin::IdDigits, '0', STR_PAD_LEFT); }
 
         /**
          * Return the trasaction's TTL
@@ -195,7 +196,7 @@ class BTransaction extends EBasiinActiveRecord
          * @param string $id
          * @return BTransfer false
          */
-        public function getTransfer( integer $id ){
+        public function getTransfer( $id ){
             foreach ($this->transfers as $transfer)
                     if ($transfer->id == $id) return $transfer;
 
@@ -208,12 +209,12 @@ class BTransaction extends EBasiinActiveRecord
          * @param string $data
          * @return BTransfer
          */
-        public function newTransfer(string $varName, integer $dataLength, integer $pieceLength){
+        public function newTransfer( $varName, $dataLength, $pieceLength){
 
             $transfer = new BTransfer();
-            $transfer->initialize($varName, $dataLength, $pieceLength);
-            
-            $this->transfers[] =$transfer;
+            $transfer->initialize($varName, $dataLength, $pieceLength, $this->id);
+
+            $transfer->save();
 
             return $transfer;
         }

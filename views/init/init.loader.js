@@ -56,11 +56,15 @@ var _loader = (function(){
         return file;
     }
 
-    function _transfer(tr) //tr = the transfers base parameters
+    /**
+     *  Create a transfer from a tr base object
+     *  @return integer The index of the transfer
+     */
+    function _transfer(tr)
     {
-        transfer = new Transfer (tr);
-
-        return transfer;
+        transferIndex = _assets.transfers.push( new Transfer (tr) );
+        
+        return transferIndex -1;
     }
 
     /**
@@ -137,11 +141,18 @@ var _loader = (function(){
         var file = false;
         var transfer = false;
         _log("processing queues")
-        while( _loader.hasBandwidth() && (file = _loader.getFile({'queued':true}))){
+        while( _loader.hasBandwidth() && (file = _getFile({'queued':true}))){
             file.install();
         }
-        while( _loader.hasBandwidth() && (transfer = _loader.getTransfer({'status':'queued'}) )){
-            transfer.start();
+        while( _loader.hasBandwidth() &&
+                ( (transfer  = _getTransfer( {'transfering':true} ))  ||
+                    (transfer = _getTransfer({'queued':true})) ) )
+        {
+            if (transfer.queued())
+                transfer.start();
+            if (transfer.transfering())
+                transfer.proceed();
+
             _log( 'transfering: '+ transfer.tag(), 2);
         }
     }

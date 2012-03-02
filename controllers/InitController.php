@@ -57,6 +57,7 @@ class InitController extends Controller
                 'homeDomain'=>Yii::app()->request->hostInfo,
                 'basiinPath'=>'basiin',
                 'filePath'=>'scripts',
+                'idDigits'=>Basiin::IdDigits,
             ));
 
             if(!$rendered)

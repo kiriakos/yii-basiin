@@ -42,7 +42,7 @@ function File(o)
     /**
      *  If the File recieved a custom onload event call that one otherwise
      *  continue with the default installation, taking whatever is in the
-     *  global variable varName and expanding it into basiin (forced expansion).
+     *  global variable variable and expanding it into basiin (forced expansion).
      */
     function _createLoadFunc(func)
     {
@@ -60,7 +60,7 @@ function File(o)
         {
             result = function(){
                 _log("file: "+ _params.tag +" file.onload fired");
-                r = _extend(_params.tag, _pickUp(_params.varName), true);
+                r = _extend(_params.tag, _pickUp(_params.variable), true);
                 
                 if (r) _state = _states.installed;
                 return r;
@@ -82,9 +82,9 @@ function File(o)
     var _backup;
     
     /* defaults */
-    var _params={'tag':null, 'file':null, 'onLoad':null, 'element':null, 'varName':null}
+    var _params={'tag':null, 'file':null, 'onLoad':null, 'element':null, 'variable':null}
     for(option in o){_params[option] = o[option]}
-    if (_params.varName == null) _params.varName = _varHash(_params.tag);
+    if (_params.variable == null) _params.variable = _varHash(_params.tag);
 
     /* init */
     function _init(){

@@ -21,10 +21,8 @@
             'transfer':function(tr){
                 //instantiate a new _transfer obj and put it inside the transfers array
                 _log('loader.transfer: creating Transfer object');
-                var transfer = _loader.transfer(tr);
-
-                _log('loader.transfer: enqeueing Transfer object');
-                return transfer.enque();
+                var tranferIndex = _loader.transfer(tr);
+                return tranferIndex;
             },
 
             // tell the basiin loader to install "file" as "tag"
@@ -49,14 +47,13 @@
             }
         },
 
-        //tell the server something data, url, tag
-        'tell': function(trstub){
+        //send the server some data that can be used with some other request
+        'tell': function(data){
             _log('tell: creating assets',2)
-            if (!trstub.url) trstub.url = _transaction.server.tell ;
-            if (!trstub.tag) trstub.tag = _hash(Math.random());
+
             _log('tell: passing data off to loader.transfer()',2)
-            var tr = this.loader.transfer(trstub);
-            return tr;
+            var tranferIndex = this.loader.transfer({'data': data});
+            return tranferIndex;
         },
 
         //install a file

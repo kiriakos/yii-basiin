@@ -22,7 +22,8 @@
             'tell': "$transaction__defaultPath" //where data goes when path not set
         },
         'maxTransfers': "$transaction__maxTransfers", // server transfer limit
-        'maxElements': "$transaction__maxElements" //browser load limit
+        'maxElements': "$transaction__maxElements", //browser load limit
+        'idDigits': $idDigits
     };
 
     $__hash
@@ -73,6 +74,11 @@
         return false;
     }
 
+    /**
+     *  Data on the user's browser
+     */
+    var _browser = { MaxUrlLength: 1000 };
+    
     $__loader
     $__elements
 

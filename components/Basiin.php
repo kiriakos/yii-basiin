@@ -23,23 +23,26 @@ class Basiin{
 
     //How many simultaneous BTransactions can a Session do
     const MaxConcursiveTransactions = 8;
-    const TransactionTTL = 300; //how long after start does cleanup keep the transaction
+    const TransactionTTL = 1800; //how long after start does cleanup keep the transaction
     
     //How many simultaneous BTransfers can a transaction do
     const MaxConcursiveTransfers = 4;
     const MaxConcursiveElements = 8;//active script tags (sum of all Transfers)
     const TransferTTL = 120;// 2min?
+    const IdDigits = 9; //used to calculate Packet sizes
 
     //mostly a js variable set to false on production
     const DEBUG = true;
     const DEBUGLVL = 5;
+
+
     
     /**************************************************************************
      ****************************** TRANSFERS *********************************
      **************************************************************************/
 
 
-    public function canAcceptTransfer( integer $size , integer $pieceSize ){
+    public function canAcceptTransfer( $size , $pieceSize ){
 
         if ( $size <= self::MaxTransferSize && self::hasStorage($size)
                 && $pieceSize <= self::MaxPieceSize )
@@ -48,7 +51,7 @@ class Basiin{
         return false;
     }
 
-    private function hasStorage( int $size ){
+    private function hasStorage( $size ){
         //TODO: create a space checking algo... or no need?
         return true;
     }
@@ -304,7 +307,7 @@ class Basiin{
         }
         
         //match $word__prop to data[$word]->prop
-        $matchObjects = '/\s"?(\$[[:alnum:]]+__[[:alnum:]]+)"?/';
+        $matchObjects = '/\s"?(\$[[:alnum:]]+__[[:alnum:]_]+)"?/';
         preg_match_all($matchObjects, $output, $objects);
         
         //match $word to data[$word]

@@ -10,7 +10,7 @@
  * The followings are the available model relations:
  * @property Transfer $transfer
  */
-class BPieces extends BasiinActiveRecord
+class BPieces extends EBasiinActiveRecord
 {
 	/**
 	 * Returns the static model of the specified AR class.

@@ -14,34 +14,54 @@ function Transfer (o) // tr = init options object
 
     /* Controll */
 
-    //generate a tag via _hash and assign it to tr.tag
-    function _reTag ()
+    //generate a tag via _hash and assign it to _params.tag
+    function _reHash (param)
     {
-        _params.tag = _hash(Math.random());
+        _params[param] = _hash(Math.random());
     }
 
     //generate script packets to send to server
-    function _proceedTransfer ()
+    function _proceed ()
     {
-        while (_loader.hasBandwidth() && _getPiece({'pending':true}))
-            _sendPiece();
+        while (_loader.hasBandwidth() &&  (packet = _getPacket()) )
+            packet.send();
     }
 
-    //dispatch a piece of data to the server
-    function _sendPiece ()
+    /**
+     *  Tell the server about the transfer and await confirmation
+     */
+    function _announce()
     {
-        if(_state==2){ //while transfer state is in transfering
-                var piece = _getPiece({'pending':true}); // obj{id,data}
 
-                if (piece) piece.send();
-                else return false;
+        if (_state > _states.announcing)
+            return false;
+            
+        _state = _states.announcing;
 
-                _log( tr.tag + ' sending piece: ' +piece.index);
-                return piece;
-        }
-        return false;
+        //the new/tell call will return an object with: tranferId
+        var onLoad = function(){
+            _announceResponse(window[_params.variable])
+        };
+
+        _elements.script(
+            ['basiin/new/tell', _transaction.id, _params.variable,
+                _params.packetSize, _params.data.length ]
+        , onLoad)
+
+        return true;
+        
     }
+    function _announceResponse(response) // onLoad handler of the announce request
+    {
+        if (response === undefined) return alert('the announce response\'s variable is undefined')
+        else if (response === false) return alert('the new transfer request was denied by the server')
 
+        _params.serverSideId = response.transferId;
+        _anounced = true;
+
+        _log('transfer: '+ _params.tag+ " announced associated with server side Id: "+ _params.serverSideId);
+        return true;
+    }
 
     /**
      *  Start or resume the transfering of Pieces
@@ -61,7 +81,7 @@ function Transfer (o) // tr = init options object
      */
     function _pause ()
     {
-        if (_state == _states.transfering){_state = _states.paused; return true;}
+        if (_state == _states.transfering){_state = _states.paused;return true;}
         return false;
     }
 
@@ -70,157 +90,154 @@ function Transfer (o) // tr = init options object
 
     /* Query */
 
-    function _getProgress(){ //returns progress percentage
-        var t = 0;var l;
-        var pT = l = _params.pieces.length;
-        while (l--) {if (_params.pieceStatus[l] == true) t++;}
-        return t/pT;
-    }
+    /**
+     *  Returns the progress percentage as a decimal
+     */
+    function _getProgress(){ 
+        var completed = 0;var all = _params.packetsTotalNeeded;
+        
+        for (var i=0;i<_params.packets.length; i++) 
+           if (_params.packets[i].completed()) completed++;    
 
-    function _isCompleted ()
-    {
-        if (_state != 3){
-            for (var i=0; i<tr.pieces.length; i++){
-                if (!tr.pieces[i].completed()) return false;
-            }
-
-            _state=3;
-            return true;
-        }
-        return true;
-    }
-    //return a piece{index,data} that hasn't been transfered yet
-    function _getPiece (obj)
-    {
-        for (index = 0; index< tr.pieces.length; index++){
-            var hit = true; var piece = tr.pieces[index];
-            for (var i in obj){
-                 hit = hit && (piece[i] === obj[i] || piece[i] === undefined ||
-                    (typeof piece[i] == 'function' && piece[i]() === obj[i]));
-            }
-            if (hit) return piece;
-        }
-        return false;
+        return t/all;
     }
 
     /**
-     *calculates the maximum length a piece's data can have
-     *based on the maximum url length a src attribute can have
-     *@return integer
+     *  Boolean true if all pieces have been recieved by the server
      */
-    function _calculatePieceLength(){return 1000 - tr.url;}
+    function _isCompleted ()
+    {
+        if (_state == _states.transfering )
+        {
+            for (var i=0; i<_params.pieces.length; i++){
+                if (!_params.pieces[i].completed()) return false;
+            }
+
+            _state = _states.complete;
+            return true;
+        }
+        else if (_state == _states.complete) return true;
+        
+        return false;
+    }
+    function _isQueued(){return _state == _states.queued}
+    function _isPaused(){return _state == _states.paused}
+    function _isTransfering(){return _state == _states.transfering}
+
+    /**
+     * If there is data left to transfer return a Packet instance else false
+     */
+    function _getPacket ()
+    {
+        if (_params.packets.count == _params.packetsTotalNeeded)
+            return false;
+
+        //get the next piece from _params.data
+        var start = _params.packets.length * _params.packetSize;
+        var url  = _params.packetUrl
+        url.push( _params.serverSideId, 
+                    _params.packets.length,
+                    _params.data.substr( start, _params.packetSize )
+                );
+
+        //create a new packet with that piece
+        var packet = new Packet ( url )
+        _params.packets.push(packet); //don't forget this, else all packets will send the same data
+        
+        return packet;
+    }
 
     
-
-
     /**************************** PRIVATE OBJECTS *****************************/
 
     //piece prototype:
-    $__Piece
+    $__Packet
 
     /************************** PRIVATE PROPERTIES ****************************/
 
     //state variable and dictionary
-    var _states={ 'queued':1, 'transfering':2, 'complete':3 };
+    var _states={'paused':-1, 'created':0, 'announcing':1, 'queued':2,
+                    'transfering':3, 'complete':4};
     var _state=0;
-    var _params = {'tag':null,'data':null,'started':null,'idle':null}
+    var _announced = false; //modified only by announce() and it's load function
+    var _params = { //undefined here means things that are not overwritable
+                    'tag':null,
+                    'serverSideId':undefined, // craeted when the transfer announces itself
+                    'variable':undefined,
+                    'data':null,
+                    'started':null,
+                    'idle':null, //last time the transfer was active
+                    'packets': undefined,
+                    'packetsTotalNeeded':undefined, // total packets needed
+                    'packetSize':undefined,
+                    'packetUrl': [ 'tell' ]
+                    
+                    //DEPRECATED
+                    /*'packetStatus':undefined  use packet.status instead */
+                    /*'dataPointer':undefined  use length of packets array */
+                }
     var _initialized = false; 
     
     /******************************** INIT ************************************/
 
-    //overwrite the defaults with the base arguments `o'
-    for(option in o){_params[option] = o[option]}
+    function _init()
+    {
+        if (_initialized) return true;
+        
+        //overwrite the defaults with the base arguments `o'
+        for(option in o){if (_params[option] !== undefined) _params[option] = o[option]}
 
-    //Initialize the transfer object with default values + args
-    if (_params.onComplete == undefined) _params.onComplete = false;
-    if (!_params.pieceL) _params.pieceL = _calculatePieceLength();
+        //Initialize the transfer object with default values + args
+        if (_params.tag == null) _params.tag = _hash( (new Date()).getTime() );
+        if (_params.variable == undefined) _params.variable = _hash( (new Date()).getMilliseconds );
 
-    while(_loader.getTransfer({'tag':_params.tag})){_reTag();}
+        while(_loader.getTransfer({'tag':_params.tag})){_reHash('tag');}
+        while(_loader.getTransfer({'variable':_params.variable})){_reHash('variable');}
 
+        //create the pieces array that will hold the data packets after they are created
+        _params.data = encodeURIComponent(_params.data);
+        
+        var urlLength =  _loader.createURL(_params.packetUrl).length+ 1+ _transaction.idDigits+ 1;
+        _params.packetSize = _browser.MaxUrlLength - urlLength;
+        _params.packetsTotalNeeded = Math.ceil(_params.data.length / _params.packetSize);
+        _params.packets= []; // _getPiece pushes to this
 
-    //create the pieces array that holds the data packets
-    var _regex = new RegExp('.{1,'+ _params.pieceL +'}', 'g'); //regex for datasplit
-    _params.data = encodeURIComponent(_params.data);
-    _params.pieces = _params.data.match(_regex);
-
-    //translate pieces array into array of Piece objects
-    for (var i=0; i<_params.pieces.length;i++){
-        _params.pieces[i]= new Piece(i, _params.pieces[i])
-        //TODO: shift to lazy Piece generation this will consume way too much
-        //      resources for large transfers
+        _log('Packet size is '+_params.packetSize+ " characters");
+        
+        _announce();
+        
+        return true;
     }
+    _initialized = _init()
 
-    //array of statuses describing the transfer status of each piece in pieces
-    //TODO: why not DEPRECATED? Pieces themselves should have this data
-    tr.pieceStatus = (function(pT){
-        var pS = new Array(pT);
-        var i = pT;
-        while (i--) {pS[i] = false;}
-        return pS;
-    })(tr.pieces.length);
-
-    _initialized = true;
     
+
     /****************************** INTERFACE *********************************/
     
     var _interface = {
         /* Controll*/
-        'reTag': _reTag,
         'start': _start,
         'pause': _pause,
-        'erase': undefined,
-        'sendPiece': _sendPiece, //DEPRECATED?
+        'proceed': _proceed,
 
-
-        
-        /* Query */
+        /* Query - read only */
+        //base paraqms
         'tag':function(){return _params.tag;},
         'data':function(){return _params.data;},
-        'pieces':function(){return _params.pieces;},
+        'variable':function(){return _params.variable;},
+        'serverSideId':function(){return _params.serverSideId;},
+
+        //state checking
         'progress': _getProgress,
-        'onComplete':function(){return _params.onComplete},
-        'status': function(){return _states[_state];},
-        'pieceComplete':function(piece, next){
-            tr.pieceStatus[piece] = true;
-            if (next){
-                //TODO: what shoudl next be? a func?
-            }
-        },
+        'queued': _isQueued,
+        'paused': _isPaused,
+        'transfering': _isTransfering,
+        'completed': _isCompleted
 
-        
-
-        
-        //DEPRECATED, only the pieces themselves need to know of that
-        'sentPiece': function(index){
-            _log( tr.tag + ' piece '+index+ ' successfully delivered');
-            
-            if (this.completed()){
-                if (tr.onComplete) tr.onComplete(this)
-            }
-            
-        },
-
-        'completed':_isCompleted,
-
-        /**
-         * shift
-         */
-        'enque': function(){
-            if (_state == 0){
-                _state = 1;
-                _loader.transfers.push(this)
-                _loader.processQueues();
-                _log("Transfer.enque: transfer enqued and awaiting transport")
-            }
-            return this;
-        },
-
-        'init':function(){
-            tr.instance = this;
-            return this;
-        }
+        //DEPRECATED
+        //'pieceComplete':_isPieceSent, //why?
     }
-
+    
     /******************************** RETURN **********************************/
 
     return _interface;

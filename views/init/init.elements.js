@@ -31,6 +31,9 @@ var _elements = (function(){
 
                 _elements.active--;
                 if ( onLoad ) onLoad();
+
+                //automate the queue processing
+                _loader.processQueues();
             };
 
             
