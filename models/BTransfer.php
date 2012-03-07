@@ -19,7 +19,7 @@
  * @property Transaction $transaction
  */
 class BTransfer extends EBasiinActiveRecord
-{
+{        
 
     /**************************************************************************
      **************************** Yii specififc *******************************
@@ -110,13 +110,17 @@ class BTransfer extends EBasiinActiveRecord
 
         /**
          * Load BTransfer with it's BPieces objects eagerly, automatically, and in one query
+         *
+         * remember default scope doesn't appear to be working with
+         * CDbCriteria::scopes property, define the criteria by hand
+         *
          * @return string
          */
         public function defaultScope(){
             return array(
+                    'condition'=>'t.timeout > '.time(),
                     'with'=>'pieces',
                     'together'=>'true',
-                    'condition'=>'t.timeout > '.time(),
                 );
         }
 
@@ -126,8 +130,10 @@ class BTransfer extends EBasiinActiveRecord
                 'withPieces'=>array(
                     'with'=>'pieces',
                     'together'=>'true',
-                    'condition'=>'t.timeout > '.time(),
                 ),
+                'active'=>array(
+                    'condition'=>'t.timeout > '.time(),
+                )
             );
         }
 
@@ -136,57 +142,77 @@ class BTransfer extends EBasiinActiveRecord
      *****************************Model-events*********************************
      **************************************************************************/
 
-        /**
-         *  On construct set the started property of the transfer
-         * @param CEvent $event
-         */
-        public function  onAfterConstruct($event) {
-            die('oAC');
-            parent::onAfterConstruct($event);
-        }
 
         /**
          *  Prepare the transfer object for saving
          * @param CEvent $event
          */
-        public function  onBeforeValidate($event) {
+        public function  onBeforeValidate($event) 
+        {
+            parent::onBeforeValidate($event);
             
-            if(parent::onBeforeValidate($event))
+            $success = true;
+            $this->setTimeout();
+
+            if(!$this->pieces) //happens on new BTransfer
             {
-                $success = true;
-                
-                $this->setTimeout();
+                $pieces = new BPieces ();
+                $pieces->transfer_id = $this->id;
+                $pieces->pieces = $pieces->createPieceString($this->piece_count);
+                $success = $pieces->save();
 
-                if(!$this->pieces)
-                {
-                    $pieces = new BPieces ();
-                    $pieces->transfer_id = $this->id;
-                    $pieces->pieces = $pieces->createPieceString($this->piece_count);
-                    $success = $pieces->save();
-
-                }
-
-                return true;
             }
 
-            return false;
+            return $success;
+        }
+
+
+        //DOESNTWORK
+        public function  onAfterConstruct($event) {
+            echo "oac transfer:".$this->id;
+            parent::onAfterConstruct($event);
+        }
+        //DOESNTWORK
+        public function  onBeforeSave($event) {
+            parent::onBeforeSave($event);
+            echo "obs transfer:".$this->id;
         }
 
         /**
-         *  Save the BPieces pieces as well as the Transfer row
-         * @param CEvent $event
+         * HACK: called by BTransaction::onAfterSave  which is called manually
          */
-        public function  onAfterSave($event) {
-            die('oAS');
-            parent::onAfterSave($event);
+        public function  onAfterSave() {
+            //hack, doesn't need to raise the system events
+            //parent::onAfterSave();
 
-            //return $this->pieces logic from onBeforeSave
+            if ($this->pieces->accessed) $this->pieces->save ();
+
+            $this->accessed = false;
+            
         }
 
+        
     /**************************************************************************
      ************************ Model-funcitonality *****************************
      **************************************************************************/
 
+
+        /**
+         *  Flag, true if the Transaction has been accesed and should be saved
+         * @var boolean
+         */
+        private $accessed=false;
+        public function getAccessed(){return $this->accessed;}
+        /**
+         *  Mark the object as accessed, save on Basiin::shutdown
+         * @return BTransaction
+         */
+        public function access(){
+            $this->accessed=true;
+            return $this;
+        }
+
+        
         /**
          *  return the AR id, probably this was protected since it's a Primary key
          * $return integer
@@ -200,17 +226,21 @@ class BTransfer extends EBasiinActiveRecord
         /**
          * Set timeout
          */
-        public function setTimeout(){
-            if(!is_numeric($this->timeout) || $this->timeout > time())
+        private function setTimeout(){
+            if(
+                $this->timeout !== 0 && // happens when the object timed out
+                ( !is_numeric($this->timeout) || $this->timeout > time())
+            )
                 $this->timeout = time() + Basiin::TransferTTL;
             else
-                $this->timeout=false;
+                //if the object timed out set timeout value to 0 to avoid reactivating a dead object
+                $this->timeout=0;
 
             return $this->timeout;
         }
 
         /**
-         *  Set up the transfer's basic parameters
+         *  Set up the transfer's basic parameters. Only called by BTransaction::newTransfer
          * @param string $varName
          * @param integer $dataLength
          * @param integer $pieceLength
@@ -226,8 +256,16 @@ class BTransfer extends EBasiinActiveRecord
             $this->started = time();
             $this->timeout = time();
 
-            touch(Yii::getPathOfAlias('basiin.incomming.'.$this->file_name));
 
+            touch(Yii::getPathOfAlias('basiin.incomming.'.$this->file_name));
+            
+            $this->accessed=true;
+
+            $this->save();//teh transfer isn't included in transaction's
+                        //transfers array since that is created before the
+                        //controller action. So must save.
+            
+            return $this;
         }
 
         /**
@@ -248,11 +286,16 @@ class BTransfer extends EBasiinActiveRecord
 
         /**
          *  Calculate the number of pieces required
+         *
+         *
+         *
          * @param integer $pieces   length of the pieces
          * @param integer $size     lenght of the transfer data
          * @return integer
          */
         public function calculatePieceCount( $pieces, $size){
-            return (integer) ceil( $size / $pieces);
+            // size is the unencoded size, so treat as if every char will
+            // need encoding
+                        return (integer) ceil( $size * 3 / $pieces);
         }
 }

@@ -31,10 +31,10 @@ class TransferController extends Controller
          * @param string $varName       The result of basiin's _hash on Transfer.data
          * @param integer $dataLength   The length (byte size) of Transfer.data
          */
-        public function actionNew( $transactionId, $varName, $pieceLength, $dataLength){
+        public function actionNew( $transactionId, $varName, $packetLength, $dataLength){
             $transactionId = (integer) $transactionId;
             $dataLength = (integer) $dataLength;
-            $pieceLength = (integer) $pieceLength;
+            $packetLength = (integer) $packetLength;
 
             $transaction = Basiin::getTransaction($transactionId);
 
@@ -42,8 +42,8 @@ class TransferController extends Controller
                     "The BTransaction {$transactionId} doesn't exist any more.", 007);
 
 
-            if (Basiin::canAcceptTransfer($dataLength,$pieceLength))
-                 $transfer = $transaction->newTransfer($varName,$dataLength,$pieceLength);
+            if (Basiin::canAcceptTransfer($dataLength,$packetLength))
+                 $transfer = $transaction->newTransfer($varName,$dataLength,$packetLength);
 
             
 
@@ -67,19 +67,59 @@ class TransferController extends Controller
          *
          * @param string $nextAction
          */
-        public function actionRecieve($transactionId, $transferTag, $pieceIndex, $pieceData)
+        public function actionRecieve($transactionId, $transferId, $packetIndex,
+                                        $startChar, $decode, $packetData)
 	{
-            
+            $decode = ((int)$decode == 1)? true:false;
             $transaction = Basiin::getTransaction ($transactionId);
-            $transfer = $transaction->getTransfer ($transferTag);
-            if ($transfer === false) $transaction->newTransfer ($transferTag);
+            $transfer = $transaction->getTransfer ($transferId);
 
+            if ($transfer === false)
+                throw new CHttpException (400, "Transfer/recieve: sorry, the transfer you are trying to access doesn't exist anymore", 007);
 
+            if ($decode) $packetData = rawurldecode ($packetData);
+            
+            //since this session has said Transaction & Transfer append $packetData to file
+            $file = Yii::getPathOfAlias('basiin.incomming').
+                        DIRECTORY_SEPARATOR. $transfer->file_name;
+
+            $start= $startChar;
+            $command = Yii::getPathOfAlias('basiin.bin'). DIRECTORY_SEPARATOR;
+            $command.= "append.sh \"${file}\" \"${start}\" \"${packetData}\"";
+            
+            $result = exec($command);
+
+            if(true)
+                $transfer->pieces->setRecieved ($packetIndex);
+            
+            $rendered=Basiin::renderFile('recieve', $this, array(
+                'transfer'=>$transfer,
+                'transaction'=>$transaction,
+                'result'=>$result,
+                'packetIndex'=>$packetIndex,
+            ));
+            //render the return verification (should be recieved={hash()} but bool true will do also)
 
             if(!$rendered)
                 throw new CHttpException (500, "sorry, counldn't complete request", 007);
 	}
 
+
+        /**
+         *  Tell Basiin that the transfer is completed and what the total $packetCount was.
+         *
+         * Returns a js object in the transfers return variable that has:
+         * hash: a hashed checksum of the file
+         * pending: an array of integers describing the packets that haven't been sent yet
+         *
+         * @param integer $transactionId
+         * @param integer $transferId
+         * @param integer $packetCount
+         */
+         public function actionFinalize($transactionId, $transferId, $packetCount)
+         {
+             //TODO: write the action
+         }
 	// Uncomment the following methods and override them if needed
 	/*
 	public function filters()

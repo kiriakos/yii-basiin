@@ -114,23 +114,63 @@ class BPieces extends EBasiinActiveRecord
 
         /**
          *  Sets the piece flag of piece $index to 1 (recieved) returns the pieces string
+         *
+         * Will pad the pieces string if a too big index is given
          * @param integer $index
          * @return string 
          */
         public function setRecieved($index){
 
-            if ($index<1 || $index > strlen($this->pieces) ) return false;
+            $this->accessed = true;
+            $pieceCount = strlen($this->pieces);
+
+            if ($index<1) return false;
+            if ($index > $pieceCount) //pad the pieces string if the initial estimation went overboard
+            {
+                $overflow = $index - $pieceCount ;
+                $extra = $this->createPieceString($overflow);
+                $this->pieces.= $extra;
+            }
 
             $this->pieces = substr_replace( $this->pieces, 1, $index -1, 1);
 
             return $this->pieces;
         }
 
-        public function Completed(){
+        /**
+         *  Check if all teh pieces have been recieved
+         *
+         * Checks if all pieces have been recieved. The $finalPieces argument
+         * is there because Basiin can't know how many pieces the transfer will
+         * need from the begining (since the user front end doesn't read the
+         * transfer stream)
+         *
+         * @param integer $finalPieces
+         * @return mixed
+         */
+        public function Completed($finalPieces){
 
             // === because strpos can return (string) "0" is substring is found
             // @ begining of haystack. "0" is falsey so type checking is needed
-            return (strpos($this->pieces, '0') === FALSE );
+            return
+            (
+                strpos( substr($this->pieces, 0, $finalPieces), '0') === FALSE
+            );
 
+        }
+        
+        /**
+         *  Flag, true if the Transaction has been accesed and should be saved
+         * @var boolean
+         */
+        private $accessed=false;
+        public function getAccessed(){return $this->accessed;}
+        /**
+         *  Mark the object as accessed, save on Basiin::shutdown
+         * @return BTransaction
+         */
+        public function access(){
+            $this->accessed=true;
+            return $this;
         }
 }

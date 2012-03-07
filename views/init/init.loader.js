@@ -58,11 +58,13 @@ var _loader = (function(){
 
     /**
      *  Create a transfer from a tr base object
+     *  @param tr       Transfer options object
+     *  @param encodeData   Tells Transfer.init() not to URLencode data (useful when sending big ascii files like images)
      *  @return integer The index of the transfer
      */
-    function _transfer(tr)
+    function _transfer(tr, encodeData)
     {
-        transferIndex = _assets.transfers.push( new Transfer (tr) );
+        transferIndex = _assets.transfers.push( new Transfer (tr, encodeData) );
         
         return transferIndex -1;
     }
@@ -92,7 +94,7 @@ var _loader = (function(){
         var settings={'defined':false, 'all':false}; //defaults
         if (options) for (var oattr in options) {settings[oattr] = options[oattr]} //apply options
 
-        _log( '_loader.getAssets '+ type+ ':'+ JSON.stringify(condition) , 5);
+        //_log( '_loader.getAssets '+ type+ ':'+ JSON.stringify(condition) , 5);
 
         // query assets
         var assets = _assets[type];
@@ -104,10 +106,11 @@ var _loader = (function(){
 
             for (var attr in condition){ //loop conditions
                  isHit = isHit && (
-                 (settings.defined == false && asset[attr] == undefined)
+                    (settings.defined == false && asset[attr] == undefined)
                         || asset[attr] == condition[attr]
-                        || (typeof asset[attr] == 'function' && asset[attr]() == condition[attr])
-                    )
+                        || (typeof asset[attr] == 'function' &&
+                                asset[attr]() == condition[attr])
+                )
             }
 
             if (settings.all && isHit) //append hit to array
@@ -145,7 +148,7 @@ var _loader = (function(){
             file.install();
         }
         while( _loader.hasBandwidth() &&
-                ( (transfer  = _getTransfer( {'transfering':true} ))  ||
+                ( (transfer  = _getTransfer( {'transfering':true, 'hasUnsentPackets':true} ))  ||
                     (transfer = _getTransfer({'queued':true})) ) )
         {
             if (transfer.queued())

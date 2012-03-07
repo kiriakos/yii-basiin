@@ -73,5 +73,10 @@ TODO: transaction cleanup on max
       write a C program that could do this?
 
 NOTE: use:
-        sed -i -r 's/(.{startindex})[0-9]{,packetLength}(.*)/\1`packetData`\2/' tempFile
+        sed -i -r 's/(.{startindex})0{,packetLength}(.*)/\1`packetData`\2/' tempFile
       for writing data to the incoming file. use echo 'zeros' >> to pad a file
+
+2012 - 03 - 07
+    Jay! Working again!!!
+    _loader.transfer:   now recognizes encodeData=false flag.
+    append.sh:           complete(ish) should do more testing?

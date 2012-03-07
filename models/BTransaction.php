@@ -14,7 +14,7 @@
  */
 class BTransaction extends EBasiinActiveRecord
 {
-
+        
         /**
 	 * Returns the static model of the specified AR class.
 	 * @return Transaction the static model class
@@ -79,7 +79,9 @@ class BTransaction extends EBasiinActiveRecord
         public function defaultScope(){
             return array(
                 //the active scope. Why can't I assign scopes by name here?
-                'condition'=>'t.timeout > '.time()
+                'with'=>'transfers',
+                'together'=>'true',
+                'condition'=>'t.timeout > '.time(),
                 );
         }
 
@@ -102,11 +104,24 @@ class BTransaction extends EBasiinActiveRecord
      **************************************************************************/
 
         /**
-         *  Before saving remember to update the timeout timer
-         * @param CEvent $event
+         * HACK: called by basiin::serializeTransactions manually
+         *
+         *
          */
-        public function  onBeforeSave($event) {
-            parent::onBeforeSave($event);
+        public function  onAfterSave() {
+            //hack, doesn't need to raise the system events
+            //parent::onAfterSave();
+
+            foreach ($this->transfers as $transfer)
+            {
+                if ($transfer->accessed)
+                {
+                        $transfer->save();
+                        $transfer->onAfterSave();
+                }
+            }
+            $this->accessed = false;
+
         }
 
         /**
@@ -118,42 +133,39 @@ class BTransaction extends EBasiinActiveRecord
          *
          * @param CEvent $event
          */
-        public function onAfterSave($event){
-
-            if (parent::onAfterSave($event))
-                foreach ($this->transfers as $transfer)
-                    $transfer->save();
-
+        public function onAfterValidate($event)
+        {
+            parent::onAfterValidate($event);
+            
+            
         }
 
         /**
          *  Last minute attrib changes + newRecord Initialization
          * @param CEvent $event
          */
-        public function  onBeforeValidate($event) {
-                //die('afterConstruct (workaround onBV)');
-                if ($this->isNewRecord){
-                    $this->started = time();
-                }
+        public function  onBeforeValidate($event) 
+        {
+            if ($this->isNewRecord){
+                $this->started = time();
+            }
+            $this->setTimeout(); //always update timeout
 
-                $this->setTimeout(); //always update timeout
+            parent::onBeforeValidate($event);
 
-                parent::onBeforeValidate($event);
-                
-        }
-        
-        public function  onAfterValidate($event) {  
-            parent::onAfterValidate($event);
         }
 
-        /**
-         *  On new object creation set the start time and other init values..
-         * @param CEvent $event
-         */
+        //DOESNTWORK
         public function  onAfterConstruct($event) {
             die('onAfterConstruct');
             parent::onAfterConstruct($event);
         }
+        //DOESNTWORK
+        public function  onBeforeSave($event) {
+            parent::onBeforeSave($event);
+            die( "obs transaction:".$this->id );
+        }
+
 
 
     /**************************************************************************
@@ -161,6 +173,22 @@ class BTransaction extends EBasiinActiveRecord
      **************************************************************************/
 
 
+        /**
+         *  Flag, true if the Transaction has been accesed and should be saved
+         * @var boolean
+         */
+        private $accessed=false;
+        public function getAccessed(){return $this->accessed;}
+        /**
+         *  Mark the object as accessed, save on Basiin::shutdown
+         * @return BTransaction
+         */
+        public function access(){
+            $this->accessed=true;
+            return $this;
+        }
+        
+        
         /**
          *  return the AR id, probably this was protected since it's a Primary key
          * $return integer
@@ -185,20 +213,31 @@ class BTransaction extends EBasiinActiveRecord
         }
 
         /**
-         * Set the timeout second depending on TransactionTTL
+         * Set timeout
          */
         private function setTimeout(){
-            $this->timeout = time() + Basiin::TransactionTTL;
+            if(
+                $this->timeout !== 0 && // happens when the object timed out
+                ( !is_numeric($this->timeout) || $this->timeout > time())
+            )
+                $this->timeout = time() + Basiin::TransferTTL;
+            else
+                //if the object timed out set timeout value to 0 to avoid reactivating a dead object
+                $this->timeout=0;
+
+            return $this->timeout;
         }
         
         /**
          *  Returns the transfer with the requested $id or False
+         *
          * @param string $id
          * @return BTransfer false
          */
         public function getTransfer( $id ){
+            
             foreach ($this->transfers as $transfer)
-                    if ($transfer->id == $id) return $transfer;
+                    if ($transfer->id == $id) return $transfer->access();
 
             return false;
         }
@@ -213,10 +252,7 @@ class BTransaction extends EBasiinActiveRecord
 
             $transfer = new BTransfer();
             $transfer->initialize($varName, $dataLength, $pieceLength, $this->id);
-
             
-            $transfer->save();
-
             return $transfer;
         }
 

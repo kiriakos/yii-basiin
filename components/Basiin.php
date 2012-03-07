@@ -28,7 +28,7 @@ class Basiin{
     //How many simultaneous BTransfers can a transaction do
     const MaxConcursiveTransfers = 4;
     const MaxConcursiveElements = 8;//active script tags (sum of all Transfers)
-    const TransferTTL = 120;// 2min?
+    const TransferTTL = 1800;// 2min?
     const IdDigits = 9; //used to calculate Packet sizes
 
     //mostly a js variable set to false on production
@@ -80,10 +80,15 @@ class Basiin{
      * @param string $id
      * @return BTransaction
      */
-    public static function getTransaction($id){
+    public static function getTransaction($id, $halt=true){
+        
         foreach (self::$transactions as $transaction){
-            if ($transaction->id == $id) return $transaction;
+            if ($transaction->id == $id) return $transaction->access();
         }
+
+        if ($halt)
+            throw new CHttpException (400, "Sorry, the transaction you are trying to access doesn't exist anymore", 007);
+
         return false;
     }
 
@@ -149,8 +154,8 @@ class Basiin{
      *
      * @param array $transactionIds
      */
-    private static function rebuildTransactions(array $transactionIds = null){
-        //die(var_dump( is_array($transactionIds)  ));
+    private static function rebuildTransactions(array $transactionIds = null)
+    {
         if ( is_array($transactionIds) )
             $transactions = BTransaction::model()->findAllByPk($transactionIds);
         else
@@ -175,8 +180,16 @@ class Basiin{
         $ts = array();
 
         foreach (self::$transactions as $transaction)
+        {
+            /* @var $transaction BTransaction */
+            if ($transaction->accessed)
+            {
+                    $transaction->save();
+                    $transaction->onAfterSave();
+            }
+            
             $ts[] = $transaction->id;
-        
+        }
         return $ts;
     }
 

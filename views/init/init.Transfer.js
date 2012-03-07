@@ -1,6 +1,10 @@
 /**
  * The transfer object, instantiated ONLY by basiin.transfer(options)
  *
+ * Upload o.data to the basiin server.
+ * Not binary safe (if someone know how to please contact).
+ *
+ * NOTE: if used with encodeData=(bool)false, o.data has to be ascii text.
  *
  *  Initialize:
  *  object o:           options object
@@ -21,13 +25,14 @@ function Transfer (o, encodeData) // tr = init options object
     //generate a tag via _hash and assign it to _params.tag
     function _reHash (param)
     {
-        _params[param] = _hash(Math.random());
+        _params[param] = _varHash(Math.random());
     }
 
     //generate script packets to send to server
     function _proceed ()
     {
-        while (_loader.hasBandwidth() && (packet = _getPacket()) )
+
+        while ( _loader.hasBandwidth() && (packet = _getPacket()) )
             packet.send();
     }
 
@@ -136,25 +141,37 @@ function Transfer (o, encodeData) // tr = init options object
      */
     function _getPacket ()
     {
-        _log('Packet count:'+ _params.packets.length);
-        if (_params.packets.length == _params.packetsTotalNeeded)
+        
+        if (!_hasUnsentPackets())
             return false;
 
         //get the next piece from _params.data
         var start = _params.packets.length * _params.packetSize;
-        var url  = _params.packetUrl
+        var url  = _params.packetUrl.slice(0);
         url.push( _params.serverSideId, 
                     _params.packets.length,
                     _params.data.substr( start, _params.packetSize )
                 );
 
         //create a new packet with that piece
-        var packet = new Packet ( url )
+        var packet = new Packet ( url );
         _params.packets.push(packet); //don't forget this, else all packets will send the same data
         _log('Packets created:'+ _params.packets.length);
         return packet;
     }
 
+    /**
+     *  check if the transfer has packets that haven't been sent to server
+     *
+     *  checks for:
+     *  packets that haven't been created yet.
+     *  TODO: packets that have timed out.
+     *  TODO: packets that were recieved corupted.
+     */
+    function _hasUnsentPackets ()
+    {
+        return ( _params.packets.length < _params.packetsTotalNeeded);
+    }
     
     /**************************** PRIVATE OBJECTS *****************************/
 
@@ -198,8 +215,8 @@ function Transfer (o, encodeData) // tr = init options object
         for(option in o){if (_params[option] !== undefined) _params[option] = o[option]}
 
         //Initialize the transfer object with default values + args
-        if (_params.tag == null) _params.tag = _hash( (new Date()).getTime() );
-        if (_params.variable == undefined) _params.variable = _hash( (new Date()).getMilliseconds );
+        if (_params.tag == null) _params.tag = _varHash( (new Date()).getTime() );
+        if (_params.variable == undefined) _params.variable = _varHash( (new Date()).getMilliseconds );
 
         while(_loader.getTransfer({'tag':_params.tag})){_reHash('tag');}
         while(_loader.getTransfer({'variable':_params.variable})){_reHash('variable');}
@@ -243,8 +260,8 @@ function Transfer (o, encodeData) // tr = init options object
         'queued': _isQueued,
         'paused': _isPaused,
         'transfering': _isTransfering,
-        'completed': _isCompleted
-
+        'completed': _isCompleted,
+        'hasUnsentPackets': _hasUnsentPackets
         //DEPRECATED
         //'pieceComplete':_isPieceSent, //why?
     }
