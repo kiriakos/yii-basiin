@@ -26,14 +26,14 @@ class Basiin{
     const TransactionTTL = 1800; //how long after start does cleanup keep the transaction
     
     //How many simultaneous BTransfers can a transaction do
-    const MaxConcursiveTransfers = 4;
+    const MaxConcursiveTransfers = 1;
     const MaxConcursiveElements = 8;//active script tags (sum of all Transfers)
     const TransferTTL = 1800;// 2min?
     const IdDigits = 9; //used to calculate Packet sizes
 
     //mostly a js variable set to false on production
     const DEBUG = true;
-    const DEBUGLVL = 5;
+    const DEBUGLVL = 4;
 
 
     

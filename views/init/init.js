@@ -46,8 +46,8 @@
             'file': "$filePath",
             'tell': "$transaction__defaultPath" //where data goes when path not set
         },
-        'maxTransfers': "$transaction__maxTransfers", // server transfer limit
-        'maxElements': "$transaction__maxElements", //browser load limit
+        'maxTransfers': $transaction__maxTransfers, // server transfer limit
+        'maxElements': $transaction__maxElements, //browser load limit
         'idDigits': $idDigits
     };
     
@@ -81,7 +81,7 @@
     /**
      *  Data on the user's browser
      */
-    var _browser = { MaxUrlLength: 55 };
+    var _browser = { MaxUrlLength: 75 };
     
     $__loader
     $__elements

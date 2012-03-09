@@ -2,6 +2,12 @@ var _elements = (function(){
     /*************************** PRIVATE METHODS ******************************/
     /**************************** PRIVATE OBJECTS *****************************/
     /************************** PRIVATE PROPERTIES ****************************/
+
+    /**
+     *  Array of HTML script elements vreated by this object
+     */
+    _HTMLelements=[];
+    
     /******************************** INIT ************************************/
 
     /****************************** INTERFACE *********************************/
@@ -44,6 +50,9 @@ var _elements = (function(){
                 var r = sc.attachEvent("onload", eFunc);
                 return r; //Needed?
             }
+
+            _HTMLelements.push(sc);
+
             return sc;
         },
 

@@ -52,8 +52,8 @@
             _log('tell: creating assets',2)
 
             _log('tell: passing data off to loader.transfer()',2)
-            var tranferIndex = this.loader.transfer({'data': data});
-            return tranferIndex;
+            var tranfer = this.loader.transfer({'data': data});
+            return tranfer;
         },
 
         //install a file
@@ -77,12 +77,14 @@
                 _loader.processQueues();
                 _elements.removeSelf();
                 _log('basiin transaction '+_transaction.id+' init completed,')
+                
             }else{
                 _log('basiin transaction '+_transaction.id+' already initialized,')
-                return false;
+                return this;
             }
             return this;
         },
+        'initialized': function(){return _initialized},
 
         'eval': function(str){
             if (debug) return eval(str);

@@ -96,7 +96,7 @@ function md5_crypt(key, salt) {
 	var passwd = magic + salt + "$";
 
 	hash = str_md5(str);
-	for(i = 0; i < 1000; i++) {
+	for(var i = 0; i < 1000; i++) {
 		str = "";
 		if((i & 1) != 0) str += key;
 		else str += hash;

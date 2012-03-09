@@ -30,7 +30,7 @@ var _loader = (function(){
     {
         _log("checking: Bandwidth "+ _elements.active+'<'+
             _transaction.maxElements+ " && "+ _elements.active+ '<'+
-            _transaction.maxTransfers );
+            _transaction.maxTransfers , 5);
         return (_elements.active < _transaction.maxElements &&
             _elements.active < _transaction.maxTransfers);
     }
@@ -50,7 +50,7 @@ var _loader = (function(){
         _log( 'installing: '+fileOptions.tag );
         // create a script tag with the route request to the file
         // the script tag gets an onLoad(this.loader.) hook)
-        file = new File (fileOptions);
+        var file = new File (fileOptions);
         file.install();
         
         return file;
@@ -64,9 +64,10 @@ var _loader = (function(){
      */
     function _transfer(tr, encodeData)
     {
-        transferIndex = _assets.transfers.push( new Transfer (tr, encodeData) );
+        var transfer = new Transfer (tr, encodeData);
+        _assets.transfers.push( transfer );
         
-        return transferIndex -1;
+        return transfer;
     }
 
     /**
@@ -94,7 +95,7 @@ var _loader = (function(){
         var settings={'defined':false, 'all':false}; //defaults
         if (options) for (var oattr in options) {settings[oattr] = options[oattr]} //apply options
 
-        //_log( '_loader.getAssets '+ type+ ':'+ JSON.stringify(condition) , 5);
+        _log( '_loader.getAssets '+ type+ ':'+ JSON.stringify(condition) , 5);
 
         // query assets
         var assets = _assets[type];
@@ -155,8 +156,6 @@ var _loader = (function(){
                 transfer.start();
             if (transfer.transfering())
                 transfer.proceed();
-
-            _log( 'transfering: '+ transfer.tag(), 2);
         }
     }
     
@@ -209,7 +208,7 @@ var _loader = (function(){
         }
 
         /* remove the init interface*/
-        this.init = undefined;
+        this.init = function(){return undefined;};
         
         /* init is chained to the self execution so: */
         return this;

@@ -68,9 +68,15 @@ class TransferController extends Controller
          * @param string $nextAction
          */
         public function actionRecieve($transactionId, $transferId, $packetIndex,
-                                        $startChar, $decode, $packetData)
+                                     $rand, $startChar, $decode, $packetData)
 	{
-            $decode = ((int)$decode == 1)? true:false;
+
+            $transactionId  = (int) $transactionId;
+            $transferId     = (int) $transferId;
+            $packetIndex    = (int) $packetIndex;
+            $startChar      = (int) $startChar;
+
+            $decode = ((int)$decode === 1)? true:false;
             $transaction = Basiin::getTransaction ($transactionId);
             $transfer = $transaction->getTransfer ($transferId);
 
@@ -78,30 +84,46 @@ class TransferController extends Controller
                 throw new CHttpException (400, "Transfer/recieve: sorry, the transfer you are trying to access doesn't exist anymore", 007);
 
             if ($decode) $packetData = rawurldecode ($packetData);
-            
+            $packetData = escapeshellarg($packetData);
+
             //since this session has said Transaction & Transfer append $packetData to file
             $file = Yii::getPathOfAlias('basiin.incomming').
                         DIRECTORY_SEPARATOR. $transfer->file_name;
 
             $start= $startChar;
             $command = Yii::getPathOfAlias('basiin.bin'). DIRECTORY_SEPARATOR;
-            $command.= "append.sh \"${file}\" \"${start}\" \"${packetData}\"";
-            
-            $result = exec($command);
+            $command.= "append.sh \"${file}\" \"${start}\" ${packetData}";
 
-            if(true)
+            $result=null;
+            $output=array();
+            exec($command, $output, $result);
+
+            //if the scrip succeded set $result to true
+            $result= ($result===0)?true:$result; 
+            
+            if($result === true)
+            {
                 $transfer->pieces->setRecieved ($packetIndex);
             
-            $rendered=Basiin::renderFile('recieve', $this, array(
-                'transfer'=>$transfer,
-                'transaction'=>$transaction,
-                'result'=>$result,
-                'packetIndex'=>$packetIndex,
-            ));
-            //render the return verification (should be recieved={hash()} but bool true will do also)
+                $rendered=Basiin::renderFile('recieve', $this, array(
+                    'transfer'=>$transfer,
+                    'packetIndex'=>$packetIndex,
+                    'hash'=>true,
+                    'output'=>$output,
+                ));
 
-            if(!$rendered)
-                throw new CHttpException (500, "sorry, counldn't complete request", 007);
+                if(!$rendered)
+                    throw new CHttpException (500, "sorry, counldn't complete request", 007);
+            }
+            else
+                $rendered=Basiin::renderFile('recieve', $this, array(
+                        'transfer'=>$transfer,
+                        'transaction'=>$transaction,
+                        'result'=>$result,
+                        'packetIndex'=>$packetIndex,
+                        '$hash'=>false,
+                    ));
+            
 	}
 
 

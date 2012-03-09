@@ -1,5 +1,5 @@
 var $transfer__variable_name = {
-    'packet': "$packetIndex",
-    'hash': true,
-    'writerOutput': ' $result '
+    'packetIndex': $packetIndex, //int
+    'hash': $hash, //TODO: implement
+    'output': $output
 };

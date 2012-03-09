@@ -46,18 +46,18 @@ function File(o)
      */
     function _createLoadFunc(func)
     {
-        var result;
+        var result, r;
         if (func)
         {
             result = function(){
                 _log("file: "+ _params.tag +" file.onload fired");
-                var r = func()
+                r = func()
                 if (r) _state = _states.installed;
                 return r;
             };
         }
         else 
-        {
+        { //default behavior, extend variable into tag.
             result = function(){
                 _log("file: "+ _params.tag +" file.onload fired");
                 r = _extend(_params.tag, _pickUp(_params.variable), true);
