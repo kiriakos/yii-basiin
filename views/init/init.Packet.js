@@ -1,4 +1,4 @@
-function Packet (url, identity)
+function Packet (url, identity, options)
 {
     var _state  = 0;
     var _states = {'pending':0, 'transfering':1, 'completed':2, 'failed':3};
@@ -45,8 +45,10 @@ function Packet (url, identity)
             if ( _transfering() || _completed() )
                 return false;
             
-            if ( _failed() )
+            if ( _failed() && url[0]=='tell' ) //a transfer packet
                 url[5]=_hash(Math.random()).substr(0,5);
+            else //an ask packet
+                url.push(_hash(Math.random()).substr(0,2));//2chars,don't want to flood the urlspace
 
             _state=_states.transfering;
             
@@ -59,7 +61,7 @@ function Packet (url, identity)
                     _state = _states.failed
             }
 
-            _element = _elements.script( url, loadFunc );
+            _element = _elements.script( url, loadFunc, failFunc );
                 
             return true;
         }

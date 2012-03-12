@@ -1,12 +1,74 @@
 (function(){
-    return{
-        'transaction': function(){return _transaction},
-        'hash': function(){return _hash()},
 
+    var intrfc={};
+
+    /***************************** query methods ******************************/
+    
+    intrfc.initialized= function(){return _initialized};
+    intrfc.transaction= function(){return _transaction};
+    intrfc.hash= function(){return _hash()};
+
+
+
+    /******************************* actions **********************************/
+
+    //ask the server something. Creates a single script element & Packet.
+    //overrides 
+    intrfc.ask= function(url, options)
+    {
+        return _loader.ask(url, options);
+    };
+
+    //send the server some data that can be used with some other request
+    intrfc.tell= function(data)
+    {
+        _log('tell: creating assets',2)
+
+        _log('tell: passing data off to loader.transfer()',2)
+        var tranfer = this.loader.transfer({'data': data});
+        return tranfer;
+    };
+
+    //install a file
+    intrfc.install= function(tag, file)
+    {   // wrapper of loader.install()
+        return this.loader.install({'tag':tag, 'file':file})
+    };
+
+    /**
+     * Initialize the framework and touchdown @ bajiin if in debug mode
+     */
+    intrfc.init= function ()
+    {
+        if (!_initialized){ // check w init var
+            _initialized = true;
+            _log('basiin transaction '+_transaction.id+' initializing,')
+            /* init tasks */
+            eval('window.'+_varHash(_transaction.id)+' = true'); //put basiin into global namespace
+            basiin = this;
+            if (debug) eval('window.bajiin = this');
+            _loader.processQueues();
+            _elements.removeSelf();
+            _log('basiin transaction '+_transaction.id+' init completed,')
+
+        }else{
+            _log('basiin transaction '+_transaction.id+' already initialized,')
+            return this;
+        }
+        return this;
+    };
+
+
+
+    /********************************** debug *********************************/
+    
+    if (debug)
+    {
         /**
+         * DEPRECAETD:
          * Public interface to _loader the facility that handles transfers
          */
-        'loader':{
+        intrfc.loader= {
             /**
              * transfer {tr.data} to server using {tr.tag}
              *
@@ -45,58 +107,21 @@
                     }
                 }
             }
-        },
-
-        //send the server some data that can be used with some other request
-        'tell': function(data){
-            _log('tell: creating assets',2)
-
-            _log('tell: passing data off to loader.transfer()',2)
-            var tranfer = this.loader.transfer({'data': data});
-            return tranfer;
-        },
-
-        //install a file
-        'install': function(tag, file)
-        {   // wrapper of loader.install()
-            this.loader.install({'tag':tag, 'file':file})
-        },
-
-        /**
-         * Initialize the framework and touchdown @ bajiin if in debug mode
-         */
-        'init': function ()
-        {
-            if (!_initialized){ // check w init var
-                _initialized = true;
-                _log('basiin transaction '+_transaction.id+' initializing,')
-                /* init tasks */
-                eval('window.'+_varHash(_transaction.id)+' = true'); //put basiin into global namespace
-                basiin = this;
-                if (debug) eval('window.bajiin = this');
-                _loader.processQueues();
-                _elements.removeSelf();
-                _log('basiin transaction '+_transaction.id+' init completed,')
-                
-            }else{
-                _log('basiin transaction '+_transaction.id+' already initialized,')
-                return this;
-            }
-            return this;
-        },
-        'initialized': function(){return _initialized},
-
-        'eval': function(str){
+        };
+        intrfc.eval= function(str){
             if (debug) return eval(str);
             else return undefined;
-        },
-        'bw': function (){
+        };
+        intrfc.bw= function (){
             return _loader.hasBandwidth();
-        },
-        'x': function (tag, item){
+        };
+        intrfc.x= function (tag, item){
             _extend(tag,item, false);
         }
 
     }
+    
+    /********************************* result *********************************/
+    return intrfc;
 })()
 

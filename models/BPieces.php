@@ -158,7 +158,29 @@ class BPieces extends EBasiinActiveRecord
             );
 
         }
-        
+
+        /**
+         *  Get the missing piece indexes for $pieceCount pieces from $offset.
+         *
+         * returns an array of pieces that haven't been recieved yet.
+         *
+         * @param integer $pieceCount
+         * @param integer $offset
+         * @return array
+         */
+        public function getMissingPieces( $pieceCount, $offset = 0){
+            $results = array();
+            $string = substr($this->pieces, 0, $pieceCount );
+            $offset = 0;
+            
+            while ($offset < (int) $pieceCount )
+                if ( ($piece = strpos($string, '0')) !==false )
+                        $results[]=$piece;
+                
+            return $results;
+        }
+
+
         /**
          *  Flag, true if the Transaction has been accesed and should be saved
          * @var boolean

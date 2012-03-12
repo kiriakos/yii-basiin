@@ -123,7 +123,9 @@ class TransferController extends Controller
                         'packetIndex'=>$packetIndex,
                         '$hash'=>false,
                     ));
-            
+
+            if(!$rendered)
+                    throw new CHttpException (500, "sorry, counldn't complete request", 007);
 	}
 
 
@@ -140,8 +142,20 @@ class TransferController extends Controller
          */
          public function actionFinalize($transactionId, $transferId, $packetCount)
          {
-             //TODO: write the action
+                $transactionId  = (int) $transactionId;
+                $transferId     = (int) $transferId;
+
+                $transaction = Basiin::getTransaction ($transactionId);
+                $transfer = $transaction->getTransfer ($transferId);
+                $finalized = $transfer->pieces->Completed((int) $packetCount);
+                
+                
+                
+                if(!$rendered)
+                    throw new CHttpException (500, "sorry, counldn't complete request", 007);
          }
+
+         
 	// Uncomment the following methods and override them if needed
 	/*
 	public function filters()

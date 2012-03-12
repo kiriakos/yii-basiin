@@ -71,6 +71,21 @@ var _loader = (function(){
     }
 
     /**
+     *  One Packet transfer that ignores available bandwith
+     *
+     *  options:
+     *      onComplete: fired after the script element loads
+     *      onError:    fired if the script element fails
+     */
+    function _ask(url, options)
+    {
+        var packet = new Packet(url, {index:'question'}, options)
+        if (packet.send() === false) return false;
+
+        return packet;
+    }
+
+    /**
      * Get a file from the _loader.files var that has obj attributes
      *  was: getQueuedFile, getQueuedTransfer
      * loops through the cond objects properties for each file in
@@ -161,7 +176,8 @@ var _loader = (function(){
     
 
     /**************************** PRIVATE OBJECTS *****************************/
-
+    
+    $__Packet
     $__Transfer
     $__File
 
@@ -219,7 +235,8 @@ var _loader = (function(){
         'hasBandwidth': _hasBW,
         'install': _install,
         'transfer': _transfer,
-
+        'ask': _ask,
+        
         'getFile': _getFile,
         'getTransfer': _getTransfer,
         'processQueues': _processQueues,

@@ -21,7 +21,7 @@ var _elements = (function(){
          * @property string src the src attribute the html elemnt shall have
          * @property refference callback    a refference to a function to execute on script load()
          */
-        'script':function(src, onLoad){
+        'script':function(src, onLoad, onError){
             if( Object.prototype.toString.call( src ) === '[object Array]' )
                 src = _loader.createURL(src);
 
@@ -30,8 +30,8 @@ var _elements = (function(){
             document.body.appendChild(sc);
             _elements.active++;
 
-            var eFunc = function(){
-                _log( 'event.onLoad would be removing script: '+sc.src);
+            var loadFunc = function(){
+                _log( 'event.onLoad would be removing script: '+ src);
                 if ( !debug )
                     sc.parentNode.removeChild(sc);
 
@@ -42,13 +42,21 @@ var _elements = (function(){
                 _loader.processQueues();
             };
 
+            var errorFunc = function(){
+                _log("element with URL:"+ src+ " failed (error)")
+                if(onError) onError();
+                
+                _loader.processQueues();
+            }
+
             
             //tidy up, delete after load
-            if (sc.addEventListener)  // W3C DOM
-                sc.addEventListener('load',eFunc,false);
-            else if (sc.attachEvent) { // IE DOM
-                var r = sc.attachEvent("onload", eFunc);
-                return r; //Needed?
+            if (sc.addEventListener){  // W3C DOM
+                sc.addEventListener('load',loadFunc,false);
+                sc.addEventListener('error',errorFunc,false);
+            }else if (sc.attachEvent) { // IE DOM
+                sc.attachEvent("onload", loadFunc);
+                sc.attachEvent("onerror", errorFunc);
             }
 
             _HTMLelements.push(sc);

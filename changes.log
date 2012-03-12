@@ -80,3 +80,7 @@ NOTE: use:
     Jay! Working again!!!
     _loader.transfer:   now recognizes encodeData=false flag.
     append.sh:           complete(ish) should do more testing?
+
+
+2012 - 03 - 12
+    init.Transfer.js:   working on Timer & append.sh

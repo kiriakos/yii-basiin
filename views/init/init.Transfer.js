@@ -99,8 +99,71 @@ function Transfer (o, encodeData) // tr = init options object
         return false;
     }
 
+    /**
+     *  Updates the timeout counter
+     */
+    function _touch()
+    {
+        var now = Math.round((new Date()).getTime() / 1000);
 
+        // init
+        if ( _params.started==null ) _params.idle  = _params.started = now;
 
+        // cycling while Transfer is active
+        if (!_has_timed_out) _setTimeOut()
+
+        return !_has_timed_out
+    }
+
+    /**
+     *  Every time the transfer resumes from idleness
+     */
+    function _setTimeOut()
+    {
+        if (!_has_timed_out)
+        {
+            _params.idle = Math.round((new Date()).getTime() / 1000);
+            clearTimeout(_time_out_obbject)
+            _time_out_obbject = setTimeout( _doTimeOut ,
+                                        _transaction.TransferTTL * 1000) //ms
+        }
+        
+        return !_has_timed_out;
+    }
+
+    /**
+     *  Procedure: when the transfer completes
+     */
+    function _stopTimeOut(){clearTimeout(_time_out_obbject)}
+
+    /**
+     *  executes the logic of a Transfer time out
+     */
+    function _doTimeOut(){
+        
+        _log('Transfer: '+ _params.tag+ " timed out");
+        _has_timed_out = true;
+        if (_params.onTimeOut) _params.onTimeOut();
+        
+    }
+
+    /**
+     *  Do the completion logic
+     */
+    function _doComplete()
+    {
+        _state = _states.complete;
+        _stopTimeOut();
+        _doFinalize();
+
+        if(_params.onComplete) _params.onComplete();
+
+        return true;
+    }
+
+    function _doFinalize(){
+        if(_params.onFinalize) _params.onFinalize();
+    }
 
     /* Query */
 
@@ -123,12 +186,11 @@ function Transfer (o, encodeData) // tr = init options object
     {
         if (_state == _states.transfering )
         {
-            for (var i=0; i<_params.packets.length; i++){
-                if (!_params.packets[i].completed()) return false;
-            }
+            for (var i=0; i<_params.packets.length; i++)
+                if (!_params.packets[i].completed())
+                    return false;
 
-            _state = _states.complete;
-            return true;
+            return _doComplete();
         }
         else if (_state == _states.complete) return true;
         
@@ -140,12 +202,7 @@ function Transfer (o, encodeData) // tr = init options object
     function _isTimedOut(){
         return _has_timed_out
     }
-    function _setTimeOut(){ //every time the transfer resumes from idleness
-        
-    }
-    function _stopTimeOut(){ //when the transfer completes
 
-    }
     /**
      *  Creates a Packet object from unsent data
      */
@@ -219,6 +276,7 @@ function Transfer (o, encodeData) // tr = init options object
     function _getPacket ()
     {
 
+
         var packet;
 
         if ( (packet = _getFailedPacket()) )
@@ -227,10 +285,10 @@ function Transfer (o, encodeData) // tr = init options object
         if ( (packet = _getNewPacket()) )
             return packet;
 
+        _isCompleted();
+
         return false; //when no packets are availavble
         
-        //TODO: this could be a good spot to invoke completion testing
-
     }
 
     /**
@@ -245,11 +303,8 @@ function Transfer (o, encodeData) // tr = init options object
     {
         return ( _params.dataPointer < _params.data.length-1 );
     }
-    
-    /**************************** PRIVATE OBJECTS *****************************/
 
-    //packet prototype:
-    $__Packet
+    //moved Packet to _loader
 
     /************************** PRIVATE PROPERTIES ****************************/
 
@@ -257,79 +312,85 @@ function Transfer (o, encodeData) // tr = init options object
     var _states={'paused':-1, 'created':0, 'announcing':1, 'queued':2,
                     'transfering':3, 'complete':4};
 
-    
+    /* status properies */
     var _state=_states.created;
     var _has_timed_out = false; // is set to true on timeout
+    var _time_out_object=null;
     var _announced = false; //modified only by announce() and it's load function
-    
-    var _params = { //undefined here means things that are not overwritable
 
-                    /**
-                     *  a hash representing a unique ID amongst transfers
-                     */
-                    'tag':null,
-                    /**
-                     *  created when the transfer announces itself
-                     *  unique id for the server
-                     */
-                    'serverSideId':undefined,
+    /* instance parameters: undefined means param isn't overwritable */
+    var _params = {
 
-                    /**
-                     *  the hash value on which the array listens for updates
-                     *  this value is checked every time the an _element loads
-                     */
-                    'variable':undefined,
+            /* user defined params */
+            /**
+             *  a hash representing a unique ID amongst transfers
+             */
+            'tag':null,            
 
-                    'data':null,
+            'data':null,
 
-                    /**
-                     *  Pointer to an index of the Data string. symbolizes the
-                     *  next char to be sent.
-                     */
-                    'dataPointer':undefined,
+            'packetUrl': [ 'tell' ],
 
-                    /**
-                     *  Epoch second transfer was created
-                     *  TODO: implement
-                     */
-                    'started':null,
+            /* event Hooks */
+            'onComplete':null,
+            'onTimeOut':null,
 
-                    /**
-                     * last time the transfer was active.
-                     * TODO: implement
-                     */
-                    'idle':null, 
+            /* locked params (init generated) */
 
-                    /**
-                     *  Packets[] created by the transfer. usefull for
-                     *  validating if all teh data has been sent
-                     */
-                    'packets': undefined,
+            /**
+             *  created when the transfer announces itself
+             *  unique id for the server
+             */
+            'serverSideId':undefined,
 
-                    /**
-                     * approxaimate count of total packets needed to complete
-                     * the data transfer. The number is based on the 3*length
-                     * of the data to be sent, so it is correct when all chars
-                     * are html entities. Should be over in most cases, will be
-                     * under if the data has many multibyte chars.
-                     */
-                    'packetsTotalNeeded':undefined,
+            /**
+             *  the hash value on which the array listens for updates
+             *  this value is checked every time the an _element loads
+             */
+            'variable':undefined,
 
-                    /**
-                     * approximate quantity of chars each packet can contain
-                     * the real packet sizes vary since each proceed call
-                     * re calcualtes the space needed for the base tell url
-                     */
-                    'packetSize':undefined,
-                    'packetUrl': [ 'tell' ],
-                    
-                    /**
-                     * available event Hooks 
-                     */
-                    'onComplete':null,
-                    'onTimeout':null
+            /**
+             * approximate quantity of chars each packet can contain
+             * the real packet sizes vary since each proceed call
+             * re calcualtes the space needed for the base tell url
+             */
+            'packetSize':undefined,
 
-                }
+            /**
+             * approxaimate count of total packets needed to complete
+             * the data transfer. The number is based on the 3*length
+             * of the data to be sent, so it is correct when all chars
+             * are html entities. Should be over in most cases, will be
+             * under if the data has many multibyte chars.
+             */
+            'packetsTotalNeeded':undefined,
+
+            /**
+             *  Pointer to an index of the Data string. symbolizes the
+             *  next char to be sent.
+             */
+            'dataPointer':undefined,
+
+            /**
+             *  Packets[] created by the transfer. usefull for
+             *  validating if all teh data has been sent
+             */
+            'packets': undefined,
+
+            /**
+             *  Epoch second transfer was created
+             *  TODO: implement
+             */
+            'started':undefined,
+
+
+            /**
+             * last time the transfer was active.
+             * TODO: implement
+             */
+            'idle':undefined
+
+        }
     var _countDown = false;
     var _initialized = false; 
     
@@ -339,35 +400,36 @@ function Transfer (o, encodeData) // tr = init options object
     {
         if (_initialized) return true;
         
-        //overwrite the defaults with the base arguments `o'
+        // overwrite the defaults with the base arguments `o'
         for(option in o){if (_params[option] !== undefined) _params[option] = o[option]}
 
-        //Initialize the transfer object with default values + args
+
+        // Initialize the transfer object with default values + args
         if (_params.tag == null) _params.tag = _varHash( (new Date()).getTime() );
         if (_params.variable == undefined) _params.variable = _varHash( (new Date()).getMilliseconds );
 
+        // make tag & variable unique
         while(_loader.getTransfer({'tag':_params.tag})){_reHash('tag');}
         while(_loader.getTransfer({'variable':_params.variable})){_reHash('variable');}
 
-        //deprectaed data is encoded @ _getPacket
-        //create the pieces array that will hold the data packets after they are created
-        //if(encodeData !== false) _params.data = encodeURIComponent(_params.data);
-        
+        /* assign protected instance parameters */
+
+        // calculate Packet Size
         var urlLength =  _loader.createURL(_params.packetUrl).length+ 1+ _transaction.idDigits+ 1;
         _params.packetSize = _browser.MaxUrlLength - urlLength;
 
-        //approximation of the total amount of packets
+        // approximate the total amount of packets
         _params.packetsTotalNeeded = Math.ceil(_params.data.length*3 / _params.packetSize);
 
         //int keeps track of the position from which the next Packet's data will
         //start. On init it obviously is at the begin of the string (position 0)
         _params.dataPointer = 0;
-
         _params.packets= []; // _getPiece pushes to this
 
         _log('Targeted packet size is '+_params.packetSize+ " characters");
         _log('Targeted packet count is '+_params.packetsTotalNeeded);
-        
+
+        _touch();
         _announce();
         
         return true;
