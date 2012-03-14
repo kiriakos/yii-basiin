@@ -137,7 +137,7 @@ class Basiin{
      */
     public static function shutDown(){
         $transactionsSerialized = self::serializeTransactions();
-        if(!$transactionsSerialized){
+        if(!$transactionsSerialized && !empty($transactionsSerialized)){
             throw new CHttpException(500, 'Basiin Failed to shutdown', 666);
             return false;
         }else{

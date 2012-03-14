@@ -50,8 +50,8 @@ function File(o)
         if (func)
         {
             result = function(){
-                _log("file: "+ _params.tag +" file.onload fired");
-                r = func()
+                _log("file: "+ _params.tag +" file.onload fired with function");
+                r = _event(func())//execute the onLoad event
                 if (r) _state = _states.installed;
                 return r;
             };

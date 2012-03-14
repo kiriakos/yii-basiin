@@ -20,7 +20,7 @@
     };
 
     //send the server some data that can be used with some other request
-    intrfc.tell= function(data)
+    intrfc.tell= function(data, options)
     {
         _log('tell: creating assets',2)
 
@@ -83,8 +83,8 @@
             'transfer':function(tr){
                 //instantiate a new _transfer obj and put it inside the transfers array
                 _log('loader.transfer: creating Transfer object');
-                var tranferIndex = _loader.transfer(tr);
-                return tranferIndex;
+                var tranfer = _loader.transfer(tr);
+                return tranfer;
             },
 
             // tell the basiin loader to install "file" as "tag"

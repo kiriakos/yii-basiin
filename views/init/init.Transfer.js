@@ -16,8 +16,11 @@
  * @method string status  returns the string version of the Transfers state
  *
  */
-function Transfer (o, encodeData) // tr = init options object
+var Transfer = function (o, encodeData) // tr = init options object
 {
+return (function(){
+
+
     /*************************** PRIVATE METHODS ******************************/
 
     /* Controll */
@@ -32,10 +35,10 @@ function Transfer (o, encodeData) // tr = init options object
     function _proceed ()
     {
         var packet;
-        while ( _loader.hasBandwidth() && (packet = _getPacket()) )
+        while ( _loader.hasBandwidth() && _isTransfering() && (packet = _getPacket())  )
             packet.send();
 
-        _log("transfer: "+ _params.tag+ " progress: "+ _getProgress());
+        _log("Transfer: "+ _params.tag+ " progress: "+ _getProgress());
     }
 
     /**
@@ -50,6 +53,7 @@ function Transfer (o, encodeData) // tr = init options object
 
         //the new/tell call will return an object with: tranferId
         var onLoad = function(){
+            if (_params.onAnnounce) _event(_params.onAnnounce);
             return _announceResponse(window[_params.variable])
         };
 
@@ -67,7 +71,7 @@ function Transfer (o, encodeData) // tr = init options object
         else if (response === false) return alert('the new transfer request was denied by the server')
 
         _params.serverSideId = response.transferId;
-        _anounced = true;
+        _announced = true;
 
         _log('transfer: '+ _params.tag+ " announced associated with server side Id: "+ _params.serverSideId);
 
@@ -81,10 +85,15 @@ function Transfer (o, encodeData) // tr = init options object
      */
     function _start ()
     {
-        if (_state == _states.queued)
+        if (_state == _states.queued || _state == _states.paused)
         {
+
             _state = _states.transfering;
+            if (_params.onDeque) _event(_params.onDeque);
+            
             _proceed();
+
+            
             return true;
         }
         return false;
@@ -95,7 +104,12 @@ function Transfer (o, encodeData) // tr = init options object
      */
     function _pause ()
     {
-        if (_state == _states.transfering){_state = _states.paused;return true;}
+        if (_state == _states.transfering)
+        {
+            _log('Transfer: '+ _params.tag+ " pausing", 2 )
+            _state = _states.paused;
+            return true;
+        }
         return false;
     }
 
@@ -107,7 +121,7 @@ function Transfer (o, encodeData) // tr = init options object
         var now = Math.round((new Date()).getTime() / 1000);
 
         // init
-        if ( _params.started==null ) _params.idle  = _params.started = now;
+        if ( _params.started==null ) _params.started = now;
 
         // cycling while Transfer is active
         if (!_has_timed_out) _setTimeOut()
@@ -123,8 +137,8 @@ function Transfer (o, encodeData) // tr = init options object
         if (!_has_timed_out)
         {
             _params.idle = Math.round((new Date()).getTime() / 1000);
-            clearTimeout(_time_out_obbject)
-            _time_out_obbject = setTimeout( _doTimeOut ,
+            clearTimeout(_time_out_object)
+            _time_out_object = setTimeout( _doTimeOut ,
                                         _transaction.TransferTTL * 1000) //ms
         }
         
@@ -134,7 +148,7 @@ function Transfer (o, encodeData) // tr = init options object
     /**
      *  Procedure: when the transfer completes
      */
-    function _stopTimeOut(){clearTimeout(_time_out_obbject)}
+    function _stopTimeOut(){clearTimeout(_time_out_object)}
 
     /**
      *  executes the logic of a Transfer time out
@@ -143,7 +157,7 @@ function Transfer (o, encodeData) // tr = init options object
         
         _log('Transfer: '+ _params.tag+ " timed out");
         _has_timed_out = true;
-        if (_params.onTimeOut) _params.onTimeOut();
+        if (_params.onTimeOut) _event(_params.onTimeOut);
         
     }
 
@@ -156,13 +170,13 @@ function Transfer (o, encodeData) // tr = init options object
         _stopTimeOut();
         _doFinalize();
 
-        if(_params.onComplete) _params.onComplete();
+        if(_params.onComplete) _event(_params.onComplete);
 
         return true;
     }
 
     function _doFinalize(){
-        if(_params.onFinalize) _params.onFinalize();
+        if(_params.onFinalize) _event(_params.onFinalize);
     }
 
     /* Query */
@@ -170,13 +184,17 @@ function Transfer (o, encodeData) // tr = init options object
     /**
      *  Returns the progress percentage as a decimal
      */
-    function _getProgress(){ 
-        var completed = 0;var all = _params.packetsTotalNeeded;
-        
+    function _getProgress(){
+
+        //get optimum progress dataPointer/data.length
+        var optimum = _params.dataPointer/_params.data.length
+
+        //calc % of delivered packets
+        var completed = 0;var all = _params.packets.length;
         for (var i=0;i<_params.packets.length; i++) 
            if (_params.packets[i].completed()) completed++;    
 
-        return completed/all;
+        return optimum*completed/all;
     }
 
     /**
@@ -238,23 +256,31 @@ function Transfer (o, encodeData) // tr = init options object
 
         //generate the data part of the url
         //be safe, keep the urlsize always a bit smaller than the limit.
-        var data='';
-        while (urlsize < _browser.MaxUrlLength-2
+        var appended, data;
+        appended = data = '';
+        while (urlsize < _browser.MaxUrlLength
                 && _params.dataPointer < _params.data.length )
         {
-            var appended= _params.data.substr( _params.dataPointer, 1 );
+            appended= _params.data.substr( _params.dataPointer, 1 );
             if(encode) appended=encodeURIComponent(appended);
+            appended=encodeURIComponent(appended);//BECAUSE_OF_APACHE
 
             data+=appended;
 
             urlsize+= appended.length;
             _params.dataPointer++ //only proceeding one char per loop
         }
+        if (urlsize > _browser.MaxUrlLength)
+        {
+            data=data.substr(0, data.length - appended.length);
+            _params.dataPointer--
+        }
+        
         url.push(data);
 
 
         //create a new packet with that piece
-        packet = new Packet ( url, id );
+        var packet = new Packet ( url, id );
         _params.packets.push(packet); //don't forget this, else all packets will send the same data
         _log('Packets created:'+ _params.packets.length);
         return packet;
@@ -291,6 +317,19 @@ function Transfer (o, encodeData) // tr = init options object
         
     }
 
+    function _addEvent (event, fn, force)
+    {
+        var ev = 'on'+ event.charAt(0).toUpperCase()+ event.substr(1)
+        if (_params[ev] === null || force)// event defaults are null
+            _params[ev] = fn;
+
+        return _params[ev]
+    }
+
+    function _event(fn, event){
+        _protoEvent(fn, event, _self);
+    }
+
     /**
      *  check if the transfer has packets that haven't been sent to server
      *
@@ -317,6 +356,9 @@ function Transfer (o, encodeData) // tr = init options object
     var _has_timed_out = false; // is set to true on timeout
     var _time_out_object=null;
     var _announced = false; //modified only by announce() and it's load function
+    var _countDown = false;
+    var _initialized = false;
+    var _self = undefined; //aliased to this on init()
 
     /* instance parameters: undefined means param isn't overwritable */
     var _params = {
@@ -333,7 +375,11 @@ function Transfer (o, encodeData) // tr = init options object
 
             /* event Hooks */
             'onComplete':null,
-            'onTimeOut':null,
+            'onTimeOut':null, //fired as last procedure of doTimeOut()
+            'onAnnounce':null, //fired before _announceResponse
+            'onError':null, //TODO
+            'onDeque':null, //fired when the  transfer changes from queued to transfering, before proceed
+
 
             /* locked params (init generated) */
 
@@ -379,21 +425,17 @@ function Transfer (o, encodeData) // tr = init options object
 
             /**
              *  Epoch second transfer was created
-             *  TODO: implement
              */
             'started':undefined,
 
 
             /**
              * last time the transfer was active.
-             * TODO: implement
              */
             'idle':undefined
 
-        }
-    var _countDown = false;
-    var _initialized = false; 
-    
+    }
+
     /******************************** INIT ************************************/
 
     function _init()
@@ -401,7 +443,7 @@ function Transfer (o, encodeData) // tr = init options object
         if (_initialized) return true;
         
         // overwrite the defaults with the base arguments `o'
-        for(option in o){if (_params[option] !== undefined) _params[option] = o[option]}
+        for( var option in o){if (_params[option] !== undefined) _params[option] = o[option]}
 
 
         // Initialize the transfer object with default values + args
@@ -426,24 +468,32 @@ function Transfer (o, encodeData) // tr = init options object
         _params.dataPointer = 0;
         _params.packets= []; // _getPiece pushes to this
 
-        _log('Targeted packet size is '+_params.packetSize+ " characters");
-        _log('Targeted packet count is '+_params.packetsTotalNeeded);
+        _log('Targeted packet size is '+ _params.packetSize+ " characters");
+        _log('Targeted packet count is '+ _params.packetsTotalNeeded );
 
         _touch();
         _announce();
-        
+
+        _init = function(){alert('you can\'t run init multiple times!');return false;}
+
         return true;
     }
-    _initialized = _init()
 
     
 
     /****************************** INTERFACE *********************************/
     
     var _interface = {
+        'init': function(){
+            _initialized = _init();
+            _self = this;
+            return this;
+        },
         /* Controll*/
         'start': _start,
-        'pause': _pause,
+        'pause': function(){
+            _pause();
+        },
         'proceed': _proceed,
 
         /* Query - read only */
@@ -460,12 +510,20 @@ function Transfer (o, encodeData) // tr = init options object
         'transfering': _isTransfering,
         'completed': _isCompleted,
         'timedOut': _isTimedOut,
-        'hasUnsentPackets': _hasUnsentPackets
+        'hasUnsentPackets': _hasUnsentPackets,
+
+        'addEvent': _addEvent
         //DEPRECATED
         //'pieceComplete':_isPieceSent, //why?
     }
     
+    if (debug)
+    {
+        _interface.e = function (string) {return eval(string);}
+    }
+
     /******************************** RETURN **********************************/
 
     return _interface;
+})().init()
 }

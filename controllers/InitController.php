@@ -58,6 +58,8 @@ class InitController extends Controller
                 'basiinPath'=>'basiin',
                 'filePath'=>'scripts',
                 'idDigits'=>Basiin::IdDigits,
+                'TransferTTL'=> Basiin::TransferTTL,
+                 'TransactionTTL'=> Basiin::TransactionTTL,
             ));
 
             if(!$rendered)

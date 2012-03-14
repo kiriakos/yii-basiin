@@ -67,10 +67,10 @@ class TransferController extends Controller
          *
          * @param string $nextAction
          */
-        public function actionRecieve($transactionId, $transferId, $packetIndex,
+        public function actionReceive($transactionId, $transferId, $packetIndex,
                                      $rand, $startChar, $decode, $packetData)
 	{
-
+            //die(var_dump($packetData));
             $transactionId  = (int) $transactionId;
             $transferId     = (int) $transferId;
             $packetIndex    = (int) $packetIndex;
@@ -83,16 +83,21 @@ class TransferController extends Controller
             if ($transfer === false)
                 throw new CHttpException (400, "Transfer/recieve: sorry, the transfer you are trying to access doesn't exist anymore", 007);
 
+            
             if ($decode) $packetData = rawurldecode ($packetData);
-            $packetData = escapeshellarg($packetData);
+            $packetData = rawurldecode ($packetData);//BECAUSE_OF_APACHE
+            
+            $packetData = escapeshellarg($packetData);//IS_THIS_PROBLEMATIC?
 
             //since this session has said Transaction & Transfer append $packetData to file
             $file = Yii::getPathOfAlias('basiin.incomming').
                         DIRECTORY_SEPARATOR. $transfer->file_name;
 
             $start= $startChar;
+            
             $command = Yii::getPathOfAlias('basiin.bin'). DIRECTORY_SEPARATOR;
-            $command.= "append.sh \"${file}\" \"${start}\" ${packetData}";
+            $command.= "append.sh \"${file}\" \"${start}\" ${packetData} 2>&1";
+            
 
             $result=null;
             $output=array();
@@ -100,29 +105,25 @@ class TransferController extends Controller
 
             //if the scrip succeded set $result to true
             $result= ($result===0)?true:$result; 
-            
-            if($result === true)
-            {
-                $transfer->pieces->setRecieved ($packetIndex);
-            
-                $rendered=Basiin::renderFile('recieve', $this, array(
+
+            $vars = array(
                     'transfer'=>$transfer,
                     'packetIndex'=>$packetIndex,
                     'hash'=>true,
-                    'output'=>$output,
-                ));
+                    'output'=> str_replace('"', '\'', implode(' \n', $output). " result:". $result),
+                );
+
+            if($result === true)
+            {
+                $transfer->pieces->setRecieved ($packetIndex);
+                
+                $rendered=Basiin::renderFile('recieve', $this, $vars);
 
                 if(!$rendered)
                     throw new CHttpException (500, "sorry, counldn't complete request", 007);
             }
             else
-                $rendered=Basiin::renderFile('recieve', $this, array(
-                        'transfer'=>$transfer,
-                        'transaction'=>$transaction,
-                        'result'=>$result,
-                        'packetIndex'=>$packetIndex,
-                        '$hash'=>false,
-                    ));
+                $rendered=Basiin::renderFile('recieve', $this, $vars);
 
             if(!$rendered)
                     throw new CHttpException (500, "sorry, counldn't complete request", 007);
@@ -155,7 +156,16 @@ class TransferController extends Controller
                     throw new CHttpException (500, "sorry, counldn't complete request", 007);
          }
 
-         
+
+         /**
+          * Debuging function retuns the length of $data recieved in var ackno..
+          * @param string $data
+          */
+         public function actionAcknowledge($data = "")
+         {
+                echo 'var acknowledged = '. strlen($data);
+         }
+
 	// Uncomment the following methods and override them if needed
 	/*
 	public function filters()

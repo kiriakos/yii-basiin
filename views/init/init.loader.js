@@ -38,10 +38,8 @@ var _loader = (function(){
     /**
      * Install a script file
      *
-     * the file argument must be an instance of the objects in the
+     * the fileOptions argument must be an instance of the objects in the
      * _loader.files array
-     * TODO: make this a prototype of all objects in files array. This way
-     *       install will be file.install() muxch cleaner.
      *
      * returns file
      */

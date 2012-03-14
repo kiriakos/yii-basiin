@@ -44,10 +44,13 @@
             'domain': "$homeDomain",
             'basiin': "$basiinPath",
             'file': "$filePath",
-            'tell': "$transaction__defaultPath" //where data goes when path not set
+            'tell': "$transaction__defaultPath", //where data goes when path not set
+            'ack' : "basiin/ack"
         },
         'maxTransfers': $transaction__maxTransfers, // server transfer limit
         'maxElements': $transaction__maxElements, //browser load limit
+        'TransferTTL': $TransferTTL,
+        'TransactionTTL': $TransactionTTL,
         'idDigits': $idDigits
     };
     
@@ -81,7 +84,40 @@
     /**
      *  Data on the user's browser
      */
-    var _browser = { MaxUrlLength: 75 };
+    var _browser = {
+        MaxUrlLength: 75,
+        benchmark: (function (){
+            var _urlSizeNext  = 100;
+            var _urlSizeStart    = 100;
+            var _urlSizeLast     = 100;
+            var _activePacket;
+            var _data, _orig='';
+            for (var i=0; i<_urlSizeNext; i++)
+                _orig+="A";
+
+            _data=_orig;
+            
+            return function(){
+                
+                if (_activePacket == undefined || _activePacket.completed())
+                    _activePacket = basiin.ask( [ 'ack', _data ], {
+                        onLoad:function(){
+                            _log('Benchmark: succeded for data size '+ _data.length)
+                            _data+=_orig;
+                            _urlSizeLast = _urlSizeNext;
+                            _urlSizeNext = _data.length;
+                            _browser.benchmark();
+                        },
+                        onError:function(){
+                            _log('Benchmark: failed for data size '+ _data.length+
+                                    ' last known good transport:'+ _urlSizeLast);
+                        }
+                    })
+
+                
+            }
+        })()
+    };
     
     $__loader
     $__elements
@@ -96,6 +132,26 @@
         return basiin[tag] === item;
     }
 
+    var _protoEvent = function (fn, event, object)
+    {
+        var title = (typeof event === 'object')?event.name:'event.name undefined';
+        _log( 'event fired: '+ title );
+
+        var result;
+
+        if (typeof fn === 'function') result = fn();
+        else if (typeof fn === 'string')
+        {
+            if (object.hasOwnProperty(fn)) result = object[fn]()
+            else result = eval(fn);
+            
+        }
+        else result = false;
+
+        return result;
+    };
+    var _event = _protoEvent;
+    
     /**
      *  Returns the value of window[variable], retaining the original variable
      *  if retain is true. Default behavior is to unset the variable from the
