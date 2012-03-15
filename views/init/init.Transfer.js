@@ -263,7 +263,7 @@ return (function(){
         {
             appended= _params.data.substr( _params.dataPointer, 1 );
             if(encode) appended=encodeURIComponent(appended);
-            appended=encodeURIComponent(appended);//BECAUSE_OF_APACHE
+            appended=encodeURIComponent(appended);//BECAUSE_OF_APACHE decoding normaly encoded stuff
 
             data+=appended;
 
@@ -278,9 +278,20 @@ return (function(){
         
         url.push(data);
 
-
+        var options = {
+            'variable': _params.variable,
+            'onSend': function (){ _activeElements++; },
+            'onLoad': function () { 
+                _activeElements--;
+                if (_params.onLoad) _params.onLoad();
+            },
+            'onError': function () {
+                _activeElements--;
+                if (_params.onError) _params.onError();
+            }
+        }
         //create a new packet with that piece
-        var packet = new Packet ( url, id );
+        var packet = new Packet ( url, id , options);
         _params.packets.push(packet); //don't forget this, else all packets will send the same data
         _log('Packets created:'+ _params.packets.length);
         return packet;
@@ -301,7 +312,7 @@ return (function(){
      */
     function _getPacket ()
     {
-
+        
 
         var packet;
 
@@ -347,7 +358,7 @@ return (function(){
 
     /************************** PRIVATE PROPERTIES ****************************/
 
-    //state variable and dictionary
+    //state dictionary
     var _states={'paused':-1, 'created':0, 'announcing':1, 'queued':2,
                     'transfering':3, 'complete':4};
 
@@ -359,6 +370,7 @@ return (function(){
     var _countDown = false;
     var _initialized = false;
     var _self = undefined; //aliased to this on init()
+    var _activeElements=0;
 
     /* instance parameters: undefined means param isn't overwritable */
     var _params = {

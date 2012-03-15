@@ -22,11 +22,20 @@ function Packet (url, identity, options)
     {
         _state = _states.completed;
         if (options && options.onLoad) _event(options.onLoad);
+
+        if (options && options.variable &&
+                window[options.variable] && window[options.variable].output)
+            _log('response output: '+window[options.variable].output)
     }
     function _failize()
     {
         _state = _states.failed;
+        _log('failing')
         if (options && options.onError) _event(options.onError());
+        
+        if (options && options.variable &&
+                window[options.variable] && window[options.variable].output)
+            _log('response output: '+window[options.variable].output)
     }
     
     /**
@@ -46,11 +55,18 @@ function Packet (url, identity, options)
 
         //TODO implement a packet hashing & validation scheme between php & js
         if (valid === true)
-            _log('Packet.loadFunction: packet '+ identity.index +' successfully sent!')
+            _log('Packet.loadFunction: packet '+ identity.index +' successfully sent!', 3)
         else
-            _log("Packet.loadFunction: packet "+ identity.index+ " wasn't delivered properly")
+            _log("Packet.loadFunction: packet "+ identity.index+ " wasn't delivered properly",3)
 
         return valid;
+    }
+
+    /**
+     * remove packet from it's reverences and delete it
+     */
+    function _forget(){
+
     }
 
     return {
@@ -92,10 +108,14 @@ function Packet (url, identity, options)
                 _failize()
             }
 
+            if (options && options.onSend) _event(options.onSend, 'send');
+
             _element = _elements.script( url, loadFunc, failFunc );
                 
             return true;
-        }
+        },
+
+        'forget': _forget
 
     };
 }

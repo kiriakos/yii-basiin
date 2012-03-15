@@ -29,22 +29,29 @@ var _elements = (function(){
             sc.src = src;
             document.body.appendChild(sc);
             _elements.active++;
-
-            var loadFunc = function(){
-                _log( 'event.onLoad would be removing script: '+ src);
-                if ( !debug )
+            
+            var removeScript = function ()
+            {
+                _log( 'event.onLoad removing script: '+ src.substr(0,70)+ '...', 4);
+                if ( !(debug && dbglvl > 4 ) )
                     sc.parentNode.removeChild(sc);
 
                 _elements.active--;
-                if ( onLoad ) onLoad();
+            }
 
-                //automate the queue processing
+            var loadFunc = function()
+            {
+                removeScript();
+                if ( onLoad ) onLoad();
+                
                 _loader.processQueues();
             };
 
-            var errorFunc = function(){
-                _log("element with URL:"+ src+ " failed (error)")
+            var errorFunc = function()
+            {
+                _log("element with URL:"+ src+ " failed (error)",0)
                 if(onError) onError();
+                removeScript();
                 
                 _loader.processQueues();
             }

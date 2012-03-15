@@ -192,6 +192,7 @@ var _loader = (function(){
          *  Array that holds all Transfers created by _loader (basiin)
          */
         transfers : []
+
     };
 
     

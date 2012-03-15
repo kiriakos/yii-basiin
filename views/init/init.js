@@ -32,7 +32,7 @@
 
     var basiin = null;
     var debug =  $debug;
-    var _dbglvl = $debuglvl; //higher == more verbose 0 == invalid 5 == max
+    var dbglvl = $debuglvl; //higher == more verbose 0 == invalid 5 == max
     var _initialized = false;
     var _transaction = {
         'id': "$transaction__id" , 'transactions': $transactions,
@@ -61,7 +61,7 @@
     {
         if (!level) level = 0;
 
-        if( (debug && level <= _dbglvl ) || level == 0) {
+        if( (debug && level <= dbglvl ) || level == 0) {
             console.log('('+ _transaction.idHash +') ' + message);
             return true;
         }
@@ -85,7 +85,7 @@
      *  Data on the user's browser
      */
     var _browser = {
-        MaxUrlLength: 75,
+        MaxUrlLength: 4000,
         benchmark: (function (){
             var _urlSizeNext  = 100;
             var _urlSizeStart    = 100;

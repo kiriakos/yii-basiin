@@ -21,7 +21,7 @@ startByte=$2
 data=$3
 ##
 
-maxSleep=20 # 2 seconds of 100ms intervals
+maxSleep=4 # 2 seconds of 500ms intervals
 
 #dataSize is length of data string
 dataSize=${#data}
@@ -33,22 +33,22 @@ fileSize=$((`stat -c %s $fileName`)) # -1 removes the EOF char
 #wait your turn to come packet
 while [ $fileSize -lt $startByte ]; do
     if [ $maxSleep -eq 0 ]; then
-        echo "wait time over I failed"
+        echo "wait time over I failed $fileSize -lt $startByte"
         exit 1;
     fi
     
-    sleep 0.1
+    sleep 0.5
     maxSleep=$(($maxSleep-1)) #reduce the time remaining
     fileSize=$((`stat -c %s $fileName`)) # update the filesize
 done
 
 ##put the data into the file
 if [ $fileSize -eq $startByte ]; then
-    echo "$data >> $fileName"
+    echo "${#data} chars >> $fileName"
     echo -n "$data" >> $fileName
     result=$?
 else
-    echo "file outgrew me, I failed"
+    echo "file outgrew me, I failed $fileSize $startByte"
     exit 1
 fi
 

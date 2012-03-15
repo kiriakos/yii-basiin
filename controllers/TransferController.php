@@ -85,10 +85,12 @@ class TransferController extends Controller
 
             
             if ($decode) $packetData = rawurldecode ($packetData);
-            $packetData = rawurldecode ($packetData);//BECAUSE_OF_APACHE
+            $packetData = rawurldecode ($packetData);//BECAUSE_OF_APACHE reverse the second enc
+            $dataLength1 = strlen($packetData);
             
             $packetData = escapeshellarg($packetData);//IS_THIS_PROBLEMATIC?
-
+            $dataLength2 = strlen($packetData);
+            
             //since this session has said Transaction & Transfer append $packetData to file
             $file = Yii::getPathOfAlias('basiin.incomming').
                         DIRECTORY_SEPARATOR. $transfer->file_name;
@@ -109,8 +111,10 @@ class TransferController extends Controller
             $vars = array(
                     'transfer'=>$transfer,
                     'packetIndex'=>$packetIndex,
-                    'hash'=>true,
-                    'output'=> str_replace('"', '\'', implode(' \n', $output). " result:". $result),
+                    'hash'=>$result,
+                    'output'=> str_replace('"', '\'', implode(' \n', $output). 
+                            " result:". $result. " lengths: 1=".$dataLength1.
+                                ' 2='. $dataLength2),
                 );
 
             if($result === true)
