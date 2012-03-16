@@ -30,15 +30,15 @@
         return hash;
     }
 
-    var basiin = null;
+    var basiin = null; //deprecated?
     var debug =  $debug;
     var dbglvl = $debuglvl; //higher == more verbose 0 == invalid 5 == max
     var _initialized = false;
     var _transaction = {
         'id': "$transaction__id" , 'transactions': $transactions,
         'idHash':(function(){return _varHash("$transaction__id")})(),
-        'afterInit': "$command", //action to execute afer basiin loads
-        'timeout': $transaction__ttl,
+        'events': $events,
+
         'server': {
             'location': "$homeDomain",
             'domain': "$homeDomain",
@@ -49,8 +49,9 @@
         },
         'maxTransfers': $transaction__maxTransfers, // server transfer limit
         'maxElements': $transaction__maxElements, //browser load limit
-        'TransferTTL': $TransferTTL,
-        'TransactionTTL': $TransactionTTL,
+        'maxTransferElements': $transaction__maxTransferElements, //when atomic writes get sorted out you will be able to increase this beyond 1
+        'TransferTTL': $transaction__TransferTTL,
+        'TransactionTTL': $transaction__TTL,
         'idDigits': $idDigits
     };
     

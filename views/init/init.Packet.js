@@ -21,21 +21,21 @@ function Packet (url, identity, options)
     function _finalize()
     {
         _state = _states.completed;
-        if (options && options.onLoad) _event(options.onLoad);
+        if (options && options.onLoad) _event(options.onLoad, {'name':'Packet/load (after)'});
 
         if (options && options.variable &&
-                window[options.variable] && window[options.variable].output)
-            _log('response output: '+window[options.variable].output)
+                _result && _result.output)
+            _log('response output: '+ _result.output)
     }
     function _failize()
     {
         _state = _states.failed;
-        _log('failing')
-        if (options && options.onError) _event(options.onError());
+        _log('Failing packet '+ _getPacketName());
+        if (options && options.onError) _event(options.onError(), {'name':'Packet/error (after)'});
         
         if (options && options.variable &&
-                window[options.variable] && window[options.variable].output)
-            _log('response output: '+window[options.variable].output)
+                _result && _result.output)
+            _log('response output: '+ _result.output)
     }
     
     /**
@@ -55,9 +55,9 @@ function Packet (url, identity, options)
 
         //TODO implement a packet hashing & validation scheme between php & js
         if (valid === true)
-            _log('Packet.loadFunction: packet '+ identity.index +' successfully sent!', 3)
+            _log('Packet.loadFunction: packet '+ _getPacketName()+ ' successfully sent!', 3)
         else
-            _log("Packet.loadFunction: packet "+ identity.index+ " wasn't delivered properly",3)
+            _log("Packet.loadFunction: packet "+ _getPacketName()+ " wasn't delivered properly",3)
 
         return valid;
     }
@@ -69,6 +69,23 @@ function Packet (url, identity, options)
 
     }
 
+    //getters
+    function _getPacketName()
+    {
+        var id = identity;
+        if (id)
+        {
+            if(id.name)
+                return id.name
+            else if (id.tag)
+                return id.tag
+            else if (id.index)
+                return id.index
+        }
+        else
+            return "Unamed Packet"
+    }
+
     return {
         'getElement':function(){return _element;},
         'getResult':function(){return _result;},
@@ -77,8 +94,9 @@ function Packet (url, identity, options)
         'transfering': _transfering,
         'completed': _completed,
         'failed':_failed,
+        'fail':_failize,
         //return a copy of the Pacet's identity object
-        'id':function() {return identity.index},
+        'id':_getPacketName,
 
         'send':function(){
             if ( _transfering() || _completed() )
@@ -95,7 +113,7 @@ function Packet (url, identity, options)
             
             var loadFunc = function()
             {
-                _result = window[options.variable];
+                _result = _pickUp(options.variable);
                 
                 if ( _result === undefined ||  _validate(_result))
                     _finalize();
@@ -105,11 +123,11 @@ function Packet (url, identity, options)
 
             var failFunc = function()
             {
+                _result = _pickUp(options.variable);
                 _failize()
             }
 
-            if (options && options.onSend) _event(options.onSend, 'send');
-
+            if (options && options.onSend) _event(options.onSend, {'name':'Packet/send (before)'});
             _element = _elements.script( url, loadFunc, failFunc );
                 
             return true;

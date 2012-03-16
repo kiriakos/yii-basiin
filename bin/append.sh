@@ -1,6 +1,9 @@
 #! /bin/env bash
 
 ##
+#   DEPRECATED! basiin uses PHP's file operations as long as there 
+#
+#
 #   Basiin application, ads transfered data to an incomming file
 #
 #   new version as of March 9 2012. This version ensures atomic actions on the
@@ -9,6 +12,7 @@
 #   can fail or time out.
 ##
 
+exit 1 #DEPRECATED
 
 ##
 #   Needs 3 params 
@@ -21,36 +25,9 @@ startByte=$2
 data=$3
 ##
 
-maxSleep=4 # 2 seconds of 500ms intervals
-
-#dataSize is length of data string
-dataSize=${#data}
-paddChar="A"
-
-##if file is shorter than startbyte pad
-fileSize=$((`stat -c %s $fileName`)) # -1 removes the EOF char
-
-#wait your turn to come packet
-while [ $fileSize -lt $startByte ]; do
-    if [ $maxSleep -eq 0 ]; then
-        echo "wait time over I failed $fileSize -lt $startByte"
-        exit 1;
-    fi
+echo "${#data} chars"
+echo -ne "$data" >> $fileName
+result=$?
     
-    sleep 0.5
-    maxSleep=$(($maxSleep-1)) #reduce the time remaining
-    fileSize=$((`stat -c %s $fileName`)) # update the filesize
-done
-
-##put the data into the file
-if [ $fileSize -eq $startByte ]; then
-    echo "${#data} chars >> $fileName"
-    echo -n "$data" >> $fileName
-    result=$?
-else
-    echo "file outgrew me, I failed $fileSize $startByte"
-    exit 1
-fi
-
 #exit with the value of the write command
 exit $result

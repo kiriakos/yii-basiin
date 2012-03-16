@@ -190,21 +190,6 @@ class BTransaction extends EBasiinActiveRecord
         
         
         /**
-         *  return the AR id, probably this was protected since it's a Primary key
-         * $return integer
-         */
-        public function getId()
-        { return str_pad( (string)$this->id, Basiin::IdDigits, '0', STR_PAD_LEFT); }
-
-        /**
-         * Return the trasaction's TTL
-         *
-         * Wrapper function to Basiin::TransactionTTL
-         * @return integer
-         */
-        public function getTTL(){ return Basiin::TransactionTTL; }
-
-        /**
          *  The path to which to send data to
          * @return string
          */
@@ -234,10 +219,14 @@ class BTransaction extends EBasiinActiveRecord
          * @param string $id
          * @return BTransfer false
          */
-        public function getTransfer( $id ){
+        public function getTransfer( $id, $halt=true, $readonly=false){
             
             foreach ($this->transfers as $transfer)
-                    if ($transfer->id == $id) return $transfer->access();
+                    if ($transfer->id == $id) return $transfer->access($readonly);
+
+            if ($halt)
+                    throw new CHttpException (400, "Sorry, the transfer you are trying to access doesn't exist anymore", 007);
+
 
             return false;
         }
@@ -256,10 +245,30 @@ class BTransaction extends EBasiinActiveRecord
             return $transfer;
         }
 
+
+        //getters needed by the renderer
+
         public function getMaxTransfers(){
             return Basiin::MaxConcursiveTransfers;
         }
         public function getMaxElements(){
             return Basiin::MaxConcursiveElements;
         }
+        public function getMaxTransferElements(){
+            return Basiin::MaxConcursiveTransferPackets;
+        }
+        /**
+         *  return the AR id, probably this was protected since it's a Primary key
+         * $return integer
+         */
+        public function getId()
+        { return str_pad( (string)$this->id, Basiin::IdDigits, '0', STR_PAD_LEFT); }
+        /**
+         * Return the trasaction's TTL
+         *
+         * Wrapper function to Basiin::TransactionTTL
+         * @return integer
+         */
+        public function getTTL(){ return Basiin::TransactionTTL; }
+        public function getTransferTTL(){ return Basiin::TransferTTL; }
 }

@@ -70,7 +70,6 @@ TODO: transaction cleanup on max
       same for transfers
       prettyfy init.elements.js (it is just an object now)
       prettyfy init.Transfer.js  (I think init.File.js has a good layout, try it)
-      write a C program that could do this?
 
 NOTE: use:
         sed -i -r 's/(.{startindex})0{,packetLength}(.*)/\1`packetData`\2/' tempFile
@@ -87,3 +86,17 @@ NOTE: use:
 
 2012 - 03 - 14
     cleaning up TODO
+
+2012 - 03 - 15
+    init.Transfer.js:   added _activeElements and implemented transfer send,
+                        load and error events on it.
+                        Made transfer timeouts to actually kill the transfer by
+                        not returning packets via getPacket() after timeout
+    init.js:            adding events & timeout facility
+    append.sh:          The problem with the size inconsistencies might be
+                        because of wrong invocation of echo. It should be
+                            echo -ne "$data" NOT echo -n "$data"
+
+2012 - 03 - 16
+    TODO:               create some type of protocol for what a Packet response
+                        should be, the current template isn't working

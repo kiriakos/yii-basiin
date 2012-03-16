@@ -162,7 +162,7 @@ var _loader = (function(){
             file.install();
         }
         while( _loader.hasBandwidth() &&
-                ( (transfer  = _getTransfer( {'transfering':true, 'hasUnsentPackets':true} ))  ||
+                ( (transfer  = _getTransfer( {'transfering':true, 'hasUnsentPackets':true, 'hasAvailableElements':true} ))  ||
                     (transfer = _getTransfer({'queued':true})) ) )
         {
             if (transfer.queued())

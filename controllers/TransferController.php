@@ -57,72 +57,88 @@ class TransferController extends Controller
         }
 
         /**
-         * A request to initialize a Basiin transaction
+         * Recieve a packet for an already announced transfer
          *
-         * This is the first request every BMlet has to make since this
-         * 1) initializes the transaction (on BMlet press = 1 transaction)
-         * 2) randomizes the function values and stores the aliases in the
-         *    session
-         * 
-         *
-         * @param string $nextAction
+         * @param integer $transactionId
+         * @param integer $transferId       
+         * @param integer $packetIndex      
+         * @param string $rand              a random seed for the browser side, irrelevant
+         * @param integer $startChar        DEPRECATED?
+         * @param integer $decode           int to bool
+         * @param string packetData         the actual data
+         * @return boolean
          */
         public function actionReceive($transactionId, $transferId, $packetIndex,
                                      $rand, $startChar, $decode, $packetData)
 	{
-            //die(var_dump($packetData));
+            $requestValid   = false;
+            $result=false;
+            $output=array();
+            
             $transactionId  = (int) $transactionId;
             $transferId     = (int) $transferId;
             $packetIndex    = (int) $packetIndex;
             $startChar      = (int) $startChar;
-
             $decode = ((int)$decode === 1)? true:false;
+            
             $transaction = Basiin::getTransaction ($transactionId);
             $transfer = $transaction->getTransfer ($transferId);
 
             if ($transfer === false)
-                throw new CHttpException (400, "Transfer/recieve: sorry, the transfer you are trying to access doesn't exist anymore", 007);
+                    return false; //just for god measure, failure is handled by gettransfer now
 
+            // enforce packet continuity:
+            // check if this is the correct piece otherwise sleep
+            $retries=0;
+            while ($retries++ < 5 && $packetIndex != $transfer->piece_next ){
+                    sleep (5);
+                    $transfer = $transaction->getTransfer ($transferId);
+            }
             
-            if ($decode) $packetData = rawurldecode ($packetData);
-            $packetData = rawurldecode ($packetData);//BECAUSE_OF_APACHE reverse the second enc
-            $dataLength1 = strlen($packetData);
-            
-            $packetData = escapeshellarg($packetData);//IS_THIS_PROBLEMATIC?
-            $dataLength2 = strlen($packetData);
-            
-            //since this session has said Transaction & Transfer append $packetData to file
-            $file = Yii::getPathOfAlias('basiin.incomming').
-                        DIRECTORY_SEPARATOR. $transfer->file_name;
-
-            $start= $startChar;
-            
-            $command = Yii::getPathOfAlias('basiin.bin'). DIRECTORY_SEPARATOR;
-            $command.= "append.sh \"${file}\" \"${start}\" ${packetData} 2>&1";
-            
-
-            $result=null;
-            $output=array();
-            exec($command, $output, $result);
-
-            //if the scrip succeded set $result to true
-            $result= ($result===0)?true:$result; 
+            $requestValid = ($packetIndex == $transfer->piece_next);
+            // if the wait didn't solve the problem, the packet is either stale or too far ahead
 
             $vars = array(
-                    'transfer'=>$transfer,
-                    'packetIndex'=>$packetIndex,
-                    'hash'=>$result,
-                    'output'=> str_replace('"', '\'', implode(' \n', $output). 
-                            " result:". $result. " lengths: 1=".$dataLength1.
-                                ' 2='. $dataLength2),
-                );
-
-            if($result === true)
+                'transfer'=>$transfer,
+                'packetIndex'=>$packetIndex,
+                'hash'=>$result,
+                'output'=> 'packet not delivered due to uber '.
+                    (($packetIndex > $transfer->piece_next)?'freshness':'staleness'),
+            );
+            
+            if ($requestValid) //req params should be checked by now, append that data
             {
-                $transfer->pieces->setRecieved ($packetIndex);
+                if ($decode) $packetData = rawurldecode ($packetData);
+                $packetData = rawurldecode ($packetData);//BECAUSE_OF_APACHE reverse the second enc
                 
-                $rendered=Basiin::renderFile('recieve', $this, $vars);
+                //since this session has said Transaction & Transfer append $packetData to file
+                $file = Yii::getPathOfAlias('basiin.incomming').
+                            DIRECTORY_SEPARATOR. $transfer->file_name;
 
+                $start= $startChar;
+
+                $fp = fopen($file,'a');
+                $result = fwrite($fp, $packetData);// int or false
+                $closed = fclose($fp);
+                
+                if (!$closed) //TODO:  fail the transfer or re-initialize
+                {
+                    $vars['output'] = "File didn't close properly! Written:". $result. " bytes. Data length: ". strlen($packetData);
+                }
+                else
+                    $vars['output'] = "Written:". $result. " bytes. Data length: ". strlen($packetData);
+            }
+            
+            if($result !== false)
+            {   
+                $vars['hash']= true;
+                $vars['bytes']= $result;
+                $transfer->pieces->setRecieved ($packetIndex);
+                $transfer->piece_next++;
+                $transfer->access();
+
+                $rendered=Basiin::renderFile('recieve', $this, $vars);
+                
                 if(!$rendered)
                     throw new CHttpException (500, "sorry, counldn't complete request", 007);
             }

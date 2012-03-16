@@ -12,6 +12,7 @@
  * @property integer $file_size
  * @property integer $piece_count
  * @property integer $piece_size
+ * @property integer $piece_next
  * @property string $variable_name
  *
  * The followings are the available model relations:
@@ -51,7 +52,7 @@ class BTransfer extends EBasiinActiveRecord
 		// will receive user inputs.
 		return array(
 			array('transaction_id, started, timeout, file_name, file_size , piece_count, piece_size, variable_name', 'required'),
-			array('transaction_id, started, timeout, piece_count, piece_size, file_size', 'numerical', 'integerOnly'=>true),
+			array('transaction_id, started, timeout, piece_count, piece_size, piece_next, file_size', 'numerical', 'integerOnly'=>true),
 			array('file_name, variable_name', 'length', 'max'=>40),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
@@ -207,8 +208,11 @@ class BTransfer extends EBasiinActiveRecord
          *  Mark the object as accessed, save on Basiin::shutdown
          * @return BTransaction
          */
-        public function access(){
-            $this->accessed=true;
+        public function access($readonly=false)
+        {
+            if ($this->accessed == false)
+                $this->accessed=!$readonly;
+            
             return $this;
         }
 
@@ -255,7 +259,6 @@ class BTransfer extends EBasiinActiveRecord
             $this->piece_count = $this->calculatePieceCount($pieceLength, $dataLength);
             $this->started = time();
             $this->timeout = time();
-
 
             touch(Yii::getPathOfAlias('basiin.incomming.'.$this->file_name));
             

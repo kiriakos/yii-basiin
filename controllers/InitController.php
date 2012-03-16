@@ -51,15 +51,16 @@ class InitController extends Controller
                         'onLoad'=>"js:function(){ basiin.jQuery = jQuery.noConflict(true);}",
                        // 'onLoad'=>"js:function(){".$transaction->id.".jQuery = jQuery.noConflict(true);}",
                 )),
-                'command'=>'image',
+                'events'=>array(
+                         'onAfterInit'=>array('', $action),
+                         'onTimeOut'=>'',
+                    ),
                 'debug'=>Basiin::DEBUG,
                 'debuglvl'=>Basiin::DEBUGLVL,
                 'homeDomain'=>Yii::app()->request->hostInfo,
                 'basiinPath'=>'basiin',
                 'filePath'=>'scripts',
                 'idDigits'=>Basiin::IdDigits,
-                'TransferTTL'=> Basiin::TransferTTL,
-                 'TransactionTTL'=> Basiin::TransactionTTL,
             ));
 
             if(!$rendered)

@@ -48,6 +48,12 @@ CREATE TABLE basiin_transfer(
      file_size INTEGER NOT NULL, /* how many bytes is the transfer */
      piece_count INTEGER NOT NULL, /* the quantity of pieces in the transfer */
      piece_size INTEGER NOT NULL, /* the (byte) length of each piece */
+     piece_next INTEGER DEFAULT 0, /* Created to keep continuity between concursive packet
+                          * deliveries. On recieve the int will be set to the
+                          * index of the recieaved packet. recieve script will
+                          * sleep for some retries to try and wait out the
+                          * needed packets
+                          */
      variable_name CHAR(40) NOT NULL, /* this string is the name of the variable
                                         that will be returned by the script
                                         tags */

@@ -191,8 +191,11 @@ class BPieces extends EBasiinActiveRecord
          *  Mark the object as accessed, save on Basiin::shutdown
          * @return BTransaction
          */
-        public function access(){
-            $this->accessed=true;
+        public function access($readonly=false)
+        {
+            if ($this->accessed == false)
+                $this->accessed=!$readonly;
+
             return $this;
         }
 }

@@ -53,8 +53,8 @@ return (function(){
 
         //the new/tell call will return an object with: tranferId
         var onLoad = function(){
-            if (_params.onAnnounce) _event(_params.onAnnounce);
-            return _announceResponse(window[_params.variable])
+            if (_params.onAnnounce) _event(_params.onAnnounce, {'name':'onAnnounce (after)'});
+            return _announceResponse(_pickUp(_params.variable));
         };
 
         _elements.script(
@@ -96,7 +96,7 @@ return (function(){
             
             return true;
         }
-        return false;
+        return _state;
     }
 
     /**
@@ -168,15 +168,11 @@ return (function(){
     {
         _state = _states.complete;
         _stopTimeOut();
-        _doFinalize();
+       
 
         if(_params.onComplete) _event(_params.onComplete);
 
         return true;
-    }
-
-    function _doFinalize(){
-        if(_params.onFinalize) _event(_params.onFinalize);
     }
 
     /* Query */
@@ -188,13 +184,14 @@ return (function(){
 
         //get optimum progress dataPointer/data.length
         var optimum = _params.dataPointer/_params.data.length
-
+        
         //calc % of delivered packets
         var completed = 0;var all = _params.packets.length;
-        for (var i=0;i<_params.packets.length; i++) 
+
+        for (var i=0;i<_params.packets.length; i++)
            if (_params.packets[i].completed()) completed++;    
 
-        return optimum*completed/all;
+        return (all>0)?optimum*completed/all:0;
     }
 
     /**
@@ -208,6 +205,7 @@ return (function(){
                 if (!_params.packets[i].completed())
                     return false;
 
+            //
             return _doComplete();
         }
         else if (_state == _states.complete) return true;
@@ -217,8 +215,8 @@ return (function(){
     function _isQueued(){return _state == _states.queued}
     function _isPaused(){return _state == _states.paused}
     function _isTransfering(){return _state == _states.transfering}
-    function _isTimedOut(){
-        return _has_timed_out
+    function _hasTimedOut(){
+        return _has_timed_out;
     }
 
     /**
@@ -312,20 +310,69 @@ return (function(){
      */
     function _getPacket ()
     {
-        
+        if ( !_hasAvailableElements() || _hasTimedOut()   )
+            return false;
 
         var packet;
-
+        _log('trying existing packets',1);
         if ( (packet = _getFailedPacket()) )
             return packet;
-
+        _log('trying new packet',1);
         if ( (packet = _getNewPacket()) )
             return packet;
 
-        _isCompleted();
+        if (_isCompleted()) _doFinalize()
+            
 
         return false; //when no packets are availavble
         
+    }
+
+    /**
+     *  called only by _getPacket after _isCompleted initiate finalize proc
+     */
+    function _doFinalize(){
+        _state = _states.finalizing;
+        _askServerAllReceived()
+        if(_params.onFinalize) _event(_params.onFinalize, {name:'onFinalize (After)'});
+    //}
+    
+    /**
+     *
+     */
+    //function _askServerAllReceived()
+    //{
+        _loader.ask(['basiin', 'transfer', 'finalize', _transaction.id,
+            _params.serverSideId, _params.packets.length], {
+                'onLoad': '_failPackets(_result)',
+                'onError': _askServerAllReceived()
+            }
+        )
+    }
+    function _askServerAllReceivedResponse($result)
+    {
+        if (result.complete === true)
+            _doComplete();
+
+        else if (result.packets && result.packets.length > 0)
+            _failPackets(result.packets);
+
+        else
+            _restartTransfer();
+    }
+
+    function _failPackets(failed)
+    {
+        
+        for (var i=0; i< failed.length; i++)
+            _params.packets[i].fail();
+        
+    }
+
+    function _restartTransfer()
+    {
+        if(_params.onError) _event(_params.onError, {name:'Transfer finalization error'})
+        _log('transfer '+ _params.tag + ' failed completely. please restart')
     }
 
     function _addEvent (event, fn, force)
@@ -353,14 +400,18 @@ return (function(){
     {
         return ( _params.dataPointer < _params.data.length-1 );
     }
-
+    function _hasAvailableElements ()
+    {
+        return (_activeElements < _transaction.maxTransferElements)
+    }
+    
     //moved Packet to _loader
 
     /************************** PRIVATE PROPERTIES ****************************/
 
     //state dictionary
     var _states={'paused':-1, 'created':0, 'announcing':1, 'queued':2,
-                    'transfering':3, 'complete':4};
+                    'transfering':3, 'finalizing':3.2, 'complete':4};
 
     /* status properies */
     var _state=_states.created;
@@ -503,9 +554,7 @@ return (function(){
         },
         /* Controll*/
         'start': _start,
-        'pause': function(){
-            _pause();
-        },
+        'pause': _pause,
         'proceed': _proceed,
 
         /* Query - read only */
@@ -521,8 +570,9 @@ return (function(){
         'paused': _isPaused,
         'transfering': _isTransfering,
         'completed': _isCompleted,
-        'timedOut': _isTimedOut,
+        'timedOut': _hasTimedOut,
         'hasUnsentPackets': _hasUnsentPackets,
+        'hasAvailableElements': _hasAvailableElements,
 
         'addEvent': _addEvent
         //DEPRECATED
