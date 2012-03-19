@@ -53,7 +53,7 @@ return (function(){
 
         //the new/tell call will return an object with: tranferId
         var onLoad = function(){
-            _event('Announce', '(after)');
+            event('afterAnnounce');
             return _announceResponse(_pickUp(_params.variable));
         };
 
@@ -88,8 +88,9 @@ return (function(){
         if (_state == _states.queued || _state == _states.paused)
         {
 
+            event('beforeDeque');
             _state = _states.transfering;
-            _event('Deque');
+            event('afterDeque');
             
             _proceed();
 
@@ -154,10 +155,11 @@ return (function(){
      *  executes the logic of a Transfer time out
      */
     function _doTimeOut(){
-        
+
+        event('timeOut', '(before)');
         _log('Transfer: '+ _params.tag+ " timed out");
         _has_timed_out = true;
-        _event('TimeOut', '(after)');
+        event('afterTimeOut');
         
     }
 
@@ -166,12 +168,10 @@ return (function(){
      */
     function _doComplete()
     {
+        event('beforeComplete')
         _state = _states.complete;
         _stopTimeOut();
-       
-
-        _event('Complete', '(after)');
-
+        event('Complete', '(after)');
         return true;
     }
 
@@ -333,21 +333,24 @@ return (function(){
      *  called only by _getPacket after _isCompleted initiate finalize proc
      */
     function _doFinalize(){
+        event('Finalize', '(Before)');
         _state = _states.finalizing;
-        _askServerAllReceived()
-        _event('Finalize', '(After)');
-    
+
         _loader.ask(['basiin', 'transfer', 'finalize', _transaction.id,
             _params.serverSideId, _params.packets.length], {
-                'onLoad': _doFinalizeResponse(),
-                'onError': _askServerAllReceived()
+                'onLoad': _doFinalizeResponse,
+                'onError': _doFinalizeResponse
             }
         )
+        event('Finalize', '(After)');
     }
 
-    function _doFinalizeResponse(result)
+    function _doFinalizeResponse(event)
     {
+        var result = event.object.getResult();
+
         if (_state !== _states.finalizing) return
+        //something changed while waiting for the response
         
         if (result.success === true)
             _doComplete();
@@ -357,7 +360,6 @@ return (function(){
 
         else
             _restartTransfer();
-
         
     }
 
@@ -373,31 +375,8 @@ return (function(){
 
     function _restartTransfer()
     {
-        _event("Restart" , '(Before)');
+        event("Restart" , '(Before)');
         _log('transfer '+ _params.tag + ' failed completely. please restart')
-    }
-
-    function _addEvent (event, fn, force)
-    {
-        var ev = 'on'+ event.charAt(0).toUpperCase()+ event.substr(1)
-        if (_params[ev] === null || force)// event defaults are null
-            _params[ev] = fn;
-
-        return _params[ev]
-    }
-
-    function _event(name, desc){
-
-        if(_params['on'+name])
-        {
-            var event={
-                'name':name,
-                'object':'Transfer'
-            }
-            if (desc) event.description = desc;
-            return _protoEvent(_params['on'+name], event, _self)
-        }
-        return false;
     }
 
     /**
@@ -545,11 +524,17 @@ return (function(){
 
         _log('Targeted packet size is '+ _params.packetSize+ " characters");
         _log('Targeted packet count is '+ _params.packetsTotalNeeded );
-
+        
+        //initialize events subsystem
+        this.addEvents(_params);
+        
         _touch();
         _announce();
+        
 
         _init = function(){alert('you can\'t run init multiple times!');return false;}
+
+        event('afterInitialize');
 
         return true;
     }
@@ -559,11 +544,13 @@ return (function(){
     /****************************** INTERFACE *********************************/
     
     var _interface = {
-        'init': function(){
-            _initialized = _init();
-            _self = this;
-            return this;
-        },
+        'init': _init,
+//            function(){
+//            _initialized = _init();
+//            _self = this;
+//            return this;
+//        },
+
         /* Controll*/
         'start': _start,
         'pause': _pause,
@@ -571,10 +558,12 @@ return (function(){
 
         /* Query - read only */
         //base paraqms
+        'objectIdentifier': "Transfer: "+_params.tag,
         'tag':function(){return _params.tag;},
         'data':function(){return _params.data;},
         'variable':function(){return _params.variable;},
         'serverSideId':function(){return _params.serverSideId;},
+
 
         //state checking
         'progress': _getProgress,
@@ -586,9 +575,6 @@ return (function(){
         'hasUnsentPackets': _hasUnsentPackets,
         'hasAvailableElements': _hasAvailableElements,
 
-        'addEvent': _addEvent
-        //DEPRECATED
-        //'pieceComplete':_isPieceSent, //why?
     }
     
     if (debug)
@@ -601,3 +587,4 @@ return (function(){
     return _interface;
 })().init()
 }
+Transfer.prototype = new BasiinObjectPrototype ();

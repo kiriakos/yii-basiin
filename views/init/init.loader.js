@@ -49,6 +49,7 @@ var _loader = (function(){
         // create a script tag with the route request to the file
         // the script tag gets an onLoad(this.loader.) hook)
         var file = new File (fileOptions);
+        console.log(file);
         file.install();
         
         return file;

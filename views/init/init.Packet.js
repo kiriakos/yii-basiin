@@ -12,6 +12,8 @@ function Packet (url, identity, options)
 
     //make sure the options object actually exists
     if (options === undefined) options={};
+    //install the events
+    addEvents(options);
 
     function _pending (){return (_state==_states.pending)}
     function _transfering(){return (_state==_states.transfering)}
@@ -20,22 +22,29 @@ function Packet (url, identity, options)
 
     function _finalize()
     {
+        event('beforeLoad');
         _state = _states.completed;
-        if (options && options.onLoad) _event(options.onLoad, {'name':'Packet/load (after)'});
+        
 
         if (options && options.variable &&
                 _result && _result.output)
             _log('response output: '+ _result.output)
+        event('afterLoad');
     }
+    
     function _failize()
     {
+        event('beforeError');
+
         _state = _states.failed;
         _log('Failing packet '+ _getPacketName());
-        if (options && options.onError) _event(options.onError(), {'name':'Packet/error (after)'});
         
         if (options && options.variable &&
                 _result && _result.output)
             _log('response output: '+ _result.output)
+
+        event('afterError');
+
     }
     
     /**
@@ -45,11 +54,12 @@ function Packet (url, identity, options)
      */
     function _validate(result)
     {
-
+        event('beforeValidate');
         //if this isn't the correct obj or the action failed (success = false)
         if (result.packetIndex != identity.index) return false;
 
-        var valid = (result.success === false)
+        
+        var valid = (result.success !== false)
 
         //TODO implement a packet hashing & validation scheme between php & js
 
@@ -58,15 +68,10 @@ function Packet (url, identity, options)
         else
             _log("Packet.loadFunction: packet "+ _getPacketName()+ " wasn't delivered properly",3)
 
+        event('afterValidate');
         return valid;
     }
 
-    /**
-     * remove packet from it's reverences and delete it
-     */
-    function _forget(){
-
-    }
 
     //getters
     function _getPacketName()
@@ -81,8 +86,8 @@ function Packet (url, identity, options)
             else if (id.index)
                 return id.index
         }
-        else
-            return "Unamed Packet"
+        
+        return "Nameless Packet"
     }
 
     return {
@@ -93,13 +98,16 @@ function Packet (url, identity, options)
         'transfering': _transfering,
         'completed': _completed,
         'failed':_failed,
-        'fail':_failize,
+        'fail':_failize, //in case you want to forcefully fail the packet
+        
         //return a copy of the Pacet's identity object
         'id':_getPacketName,
 
         'send':function(){
             if ( _transfering() || _completed() )
                 return false;
+
+            event('beforeSend');
             
             if ( _failed() && url[0]=='tell' ) //a transfer packet
                 url[5]=_hash(Math.random()).substr(0,5);
@@ -125,14 +133,12 @@ function Packet (url, identity, options)
                 _result = _pickUp(options.variable);
                 _failize()
             }
-
-            if (options && options.onSend) _event(options.onSend, {'name':'Packet/send (before)'});
+            
             _element = _elements.script( url, loadFunc, failFunc );
-                
+
+            event('afterSend');
             return true;
-        },
-
-        'forget': _forget
-
+        }
     };
 }
+Packet.prototype = new BasiinObjectPrototype ();

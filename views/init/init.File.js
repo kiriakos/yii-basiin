@@ -1,13 +1,39 @@
 function File(o)
 {
-    /* private methods */
-    function _install()
+    /* private properties */
+    var _state=0;
+    var _states={queued:0,installing:1,installed:2,uninstalled:3}
+    var _backup;
+    
+    /* defaults */
+    var _params={'tag':null, 'file':null, 'onLoad':null, 'element':null, 'variable':null}
+
+       
+    function _fileLoaded(){
+        if(_state==_states.installing)
+        {
+            console.log(that)
+            that.event('load')
+        }
+    }
+
+
+    /* public accessors*/
+    this.state = function(){return _state;}
+    this.installed  = function _installed () {return _state == _states.installed}
+    this.installing = function _installing () {return _state == _states.installing}
+    this.queued     = function _queued () {return _state == _states.queued}
+    this.uninstalled= function _uninstalled(){return _state == _state.uninstalled;}
+
+
+    /* public methods */
+    this.install = function _install()
     {
-        if(_queued())
+        if(this.queued())
         {
             _params.element = _elements.script(
                                 ["file",_params.file],
-                                _createLoadFunc(_params.onLoad)
+                                _fileLoaded
                             );
             _state = _states.installing;
             return true;
@@ -15,9 +41,9 @@ function File(o)
         else return false;
     }
 
-    function /* bloat */ _uninstall()
+    this.uninstall = function _uninstall()
     {
-        if(_installed()) 
+        if(this.installed())
         {
             _state = _states.uninstalled;
             return _backup = basiin[_params.tag];
@@ -25,9 +51,9 @@ function File(o)
         else return false;
     }
 
-    function /* bloat */ _reinstall(force)
+    this.reinstall = function _reinstall(force)
     {
-        if(_uninstalled())
+        if(this.uninstalled())
         {
             _extended = _extend (_params.tag, _backup, force);
             if (_extended) _state = _states.installed;
@@ -36,76 +62,20 @@ function File(o)
         else return false;
     }
 
-    /* event behaviors */
 
-
-    /**
-     *  If the File recieved a custom onload event call that one otherwise
-     *  continue with the default installation, taking whatever is in the
-     *  global variable variable and expanding it into basiin (forced expansion).
-     */
-    function _createLoadFunc(func)
-    {
-        var result, r;
-        if (func)
-        {
-            result = function(){
-                _log("file: "+ _params.tag +" file.onload fired with function");
-                r = _event(func())//execute the onLoad event
-                if (r) _state = _states.installed;
-                return r;
-            };
-        }
-        else 
-        { //default behavior, extend variable into tag.
-            result = function(){
-                _log("file: "+ _params.tag +" file.onload fired");
-                r = _extend(_params.tag, _pickUp(_params.variable), true);
-                
-                if (r) _state = _states.installed;
-                return r;
-            }
-        }
-        
-        return result;
-    }
-
-    /* private accessors*/
-    function _installed () {return _state == _states.installed}
-    function _installing () {return _state == _states.installing}
-    function _queued () {return _state == _states.queued}
-    function _uninstalled(){return _state == _state.uninstalled;}
-
-    /* private properties */
-    var _state=0;
-    var _states={queued:0,installing:1,installed:2,uninstalled:3}
-    var _backup;
-    
-    /* defaults */
-    var _params={'tag':null, 'file':null, 'onLoad':null, 'element':null, 'variable':null}
-    for(option in o){_params[option] = o[option]}
+    /*********************      Initialize     ****************************/
+    for(var option in o){_params[option] = o[option]}
     if (_params.variable == null) _params.variable = _varHash(_params.tag);
 
-    /* init */
-    function _init(){
-        /* placeholder */
-    }
+    //create an event hook to the default install behavior if no onLoad hook exists
+    if (!_params.onLoad) _params.onLoad = _extend(_params.tag, _pickUp(_params.variable), true);
 
-    /* interface */
-    var _interface = {
-        //controll
-        install:_install,
-        uninstall:_uninstall, /* bloat */
-        reinstall:_reinstall, /* bloat */
-
-        //
-        installed: _installed,
-        installing: _installing,
-        queued: _queued,
-        uninstalled: _uninstalled,
-        state: function(){return _state;} //get the numeric value of the File's state
-        
-    };
+    //this.__proto__ = new BasiinObjectPrototype ();
+    //console.log(this)
     
-    return _interface;
+    var that = this;
+    this.addEvents(_params);
+    console.log(this.registeredEvents())
+
 }
+File.prototype = new BasiinObjectPrototype();

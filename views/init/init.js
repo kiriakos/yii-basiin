@@ -119,10 +119,11 @@
             }
         })()
     };
-    
+
+    $__BasiinObjectPrototype
     $__loader
     $__elements
-
+    
     /**
      * Extend the basiin object with item accesible through tag
      */

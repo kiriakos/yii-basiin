@@ -27,13 +27,13 @@
                  object constructor creates the static space. everythign defined
                  outside the return value is static.
 
-                 var prototypeConstructor = (function(){
+                 var prototypeConstructor = (function(nonStatic){
                     var staticVars = values
                     var hiddenVars = vals
-                    return function prototypeInterface(){
-                        this.accessors = function(){};
+                    return function prototypeInterface(nonStatic){
+                        this.nonStatic = nonStatic; // can access dynamic props
+                        this.accessors = function(){}; //can access static props
                     }
-
                  })()
 
                  new prototypeConstructor returns obj prototypeInterface
