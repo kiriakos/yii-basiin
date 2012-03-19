@@ -46,14 +46,13 @@ function Packet (url, identity, options)
     function _validate(result)
     {
 
-        if (result.packetIndex != identity.index ) return false;
+        //if this isn't the correct obj or the action failed (success = false)
+        if (result.packetIndex != identity.index) return false;
 
-        var hash = result.hash;
-        var valid = false;
-        
-        if (hash === true) valid=true;
+        var valid = (result.success === false)
 
         //TODO implement a packet hashing & validation scheme between php & js
+
         if (valid === true)
             _log('Packet.loadFunction: packet '+ _getPacketName()+ ' successfully sent!', 3)
         else
@@ -111,7 +110,7 @@ function Packet (url, identity, options)
             
             _state=_states.transfering;
             
-            var loadFunc = function()
+            var loadFunc = function() //called when the packet arrives and is valid js
             {
                 _result = _pickUp(options.variable);
                 
@@ -121,7 +120,7 @@ function Packet (url, identity, options)
                     _failize();
             }
 
-            var failFunc = function()
+            var failFunc = function() //called on error (eg: server 500) or js error
             {
                 _result = _pickUp(options.variable);
                 _failize()

@@ -100,3 +100,10 @@ NOTE: use:
 2012 - 03 - 16
     TODO:               create some type of protocol for what a Packet response
                         should be, the current template isn't working
+
+    NOTE:               Events implementation is completely wrong.
+
+    TODO:               create the LoaderObject prototype class, from which
+                        File,Transfer & Packet will inherit (events).
+                        create the BasiinObject class from which _loader,
+                        _elements & LoaderObject will inherit (events)

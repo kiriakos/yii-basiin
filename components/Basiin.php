@@ -20,6 +20,8 @@ class Basiin{
     //canceled and the data forgotten
     const MaxTransferSize = 2000000; //2M bytes
     const MaxPieceSize = 100000; //100K bytes
+    const MaxUrlLength = 4000; //4096 doesn't work on some apache configs, for 
+                               //higher values you will need to recompile apache
 
     //How many simultaneous BTransactions can a Session do
     const MaxConcursiveTransactions = 8;
@@ -325,7 +327,7 @@ class Basiin{
         
         //match $word to data[$word]
         $matchVars = '/\s"?(\$[[:alnum:]]+)"?(?:[^[:alnum:]_\-\.])/';
-        ////ends @ - also, should be ok since hyphen chars are not allowed in js vars
+        //ends @ - also, should be ok since hyphen chars are not allowed in js vars
         preg_match_all($matchVars, $output, $vars);
 
         

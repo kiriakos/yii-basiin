@@ -48,8 +48,10 @@ class TransferController extends Controller
             
 
             $rendered = Basiin::renderFile(
-                        'new',$this,array(
-                            'transfer'=>$transfer
+                        'packet',$this,array(
+                            'variable_name'=>$transfer->variable_name,
+                            'sucess'=>true,
+                            'data'=>$transfer->id,
                             ),False);
 
             if(!$rendered)
@@ -99,9 +101,9 @@ class TransferController extends Controller
             // if the wait didn't solve the problem, the packet is either stale or too far ahead
 
             $vars = array(
-                'transfer'=>$transfer,
+                'variable_name'=>$transfer->variable_name,
                 'packetIndex'=>$packetIndex,
-                'hash'=>$result,
+                'success'=>$result,
                 'output'=> 'packet not delivered due to uber '.
                     (($packetIndex > $transfer->piece_next)?'freshness':'staleness'),
             );
@@ -131,19 +133,19 @@ class TransferController extends Controller
             
             if($result !== false)
             {   
-                $vars['hash']= true;
+                $vars['success']= true;
                 $vars['bytes']= $result;
                 $transfer->pieces->setRecieved ($packetIndex);
                 $transfer->piece_next++;
                 $transfer->access();
 
-                $rendered=Basiin::renderFile('recieve', $this, $vars);
+                $rendered=Basiin::renderFile('packet', $this, $vars);
                 
                 if(!$rendered)
                     throw new CHttpException (500, "sorry, counldn't complete request", 007);
             }
             else
-                $rendered=Basiin::renderFile('recieve', $this, $vars);
+                $rendered=Basiin::renderFile('packet', $this, $vars);
 
             if(!$rendered)
                     throw new CHttpException (500, "sorry, counldn't complete request", 007);
@@ -165,12 +167,24 @@ class TransferController extends Controller
          {
                 $transactionId  = (int) $transactionId;
                 $transferId     = (int) $transferId;
+                $packetCount    = (int) $packetCount;
 
                 $transaction = Basiin::getTransaction ($transactionId);
                 $transfer = $transaction->getTransfer ($transferId);
-                $finalized = $transfer->pieces->Completed((int) $packetCount);
-                
-                
+                $completed = $transfer->pieces->Completed($packetCount);
+
+                $vars = array(
+                    'success'=>true,
+                    'data' => null
+                );
+
+                if (!$completed)
+                {
+                    $vars["success"]= false;
+                    $vars["data"]= $transfer->pieces->getMissingPieces($packetCount);
+                }
+
+                $rendered = Basiin::renderFile('packet', $this, $vars);
                 
                 if(!$rendered)
                     throw new CHttpException (500, "sorry, counldn't complete request", 007);

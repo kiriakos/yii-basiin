@@ -53,7 +53,7 @@ return (function(){
 
         //the new/tell call will return an object with: tranferId
         var onLoad = function(){
-            if (_params.onAnnounce) _event(_params.onAnnounce, {'name':'onAnnounce (after)'});
+            _event('Announce', '(after)');
             return _announceResponse(_pickUp(_params.variable));
         };
 
@@ -70,7 +70,7 @@ return (function(){
         if (response === undefined) return alert('the announce response\'s variable is undefined')
         else if (response === false) return alert('the new transfer request was denied by the server')
 
-        _params.serverSideId = response.transferId;
+        _params.serverSideId = response.data;
         _announced = true;
 
         _log('transfer: '+ _params.tag+ " announced associated with server side Id: "+ _params.serverSideId);
@@ -89,7 +89,7 @@ return (function(){
         {
 
             _state = _states.transfering;
-            if (_params.onDeque) _event(_params.onDeque);
+            _event('Deque');
             
             _proceed();
 
@@ -157,7 +157,7 @@ return (function(){
         
         _log('Transfer: '+ _params.tag+ " timed out");
         _has_timed_out = true;
-        if (_params.onTimeOut) _event(_params.onTimeOut);
+        _event('TimeOut', '(after)');
         
     }
 
@@ -170,7 +170,7 @@ return (function(){
         _stopTimeOut();
        
 
-        if(_params.onComplete) _event(_params.onComplete);
+        _event('Complete', '(after)');
 
         return true;
     }
@@ -220,7 +220,8 @@ return (function(){
     }
 
     /**
-     *  Creates a Packet object from unsent data
+     *  Maker function,Creates a Packet object from unsent data
+     *  
      */
     function _getNewPacket()
     {
@@ -334,31 +335,30 @@ return (function(){
     function _doFinalize(){
         _state = _states.finalizing;
         _askServerAllReceived()
-        if(_params.onFinalize) _event(_params.onFinalize, {name:'onFinalize (After)'});
-    //}
+        _event('Finalize', '(After)');
     
-    /**
-     *
-     */
-    //function _askServerAllReceived()
-    //{
         _loader.ask(['basiin', 'transfer', 'finalize', _transaction.id,
             _params.serverSideId, _params.packets.length], {
-                'onLoad': '_failPackets(_result)',
+                'onLoad': _doFinalizeResponse(),
                 'onError': _askServerAllReceived()
             }
         )
     }
-    function _askServerAllReceivedResponse($result)
+
+    function _doFinalizeResponse(result)
     {
-        if (result.complete === true)
+        if (_state !== _states.finalizing) return
+        
+        if (result.success === true)
             _doComplete();
 
-        else if (result.packets && result.packets.length > 0)
-            _failPackets(result.packets);
+        else if (result.error)
+            _failPackets(result.data.packets);
 
         else
             _restartTransfer();
+
+        
     }
 
     function _failPackets(failed)
@@ -366,12 +366,14 @@ return (function(){
         
         for (var i=0; i< failed.length; i++)
             _params.packets[i].fail();
+
+        _state = _states.transfering;
         
     }
 
     function _restartTransfer()
     {
-        if(_params.onError) _event(_params.onError, {name:'Transfer finalization error'})
+        _event("Restart" , '(Before)');
         _log('transfer '+ _params.tag + ' failed completely. please restart')
     }
 
@@ -384,8 +386,18 @@ return (function(){
         return _params[ev]
     }
 
-    function _event(fn, event){
-        _protoEvent(fn, event, _self);
+    function _event(name, desc){
+
+        if(_params['on'+name])
+        {
+            var event={
+                'name':name,
+                'object':'Transfer'
+            }
+            if (desc) event.description = desc;
+            return _protoEvent(_params['on'+name], event, _self)
+        }
+        return false;
     }
 
     /**

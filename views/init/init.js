@@ -133,25 +133,8 @@
         return basiin[tag] === item;
     }
 
-    var _protoEvent = function (fn, event, object)
-    {
-        var title = (typeof event === 'object')?event.name:'event.name undefined';
-        _log( 'event fired: '+ title );
-
-        var result;
-
-        if (typeof fn === 'function') result = fn();
-        else if (typeof fn === 'string')
-        {
-            if (object.hasOwnProperty(fn)) result = object[fn]()
-            else result = eval(fn);
-            
-        }
-        else result = false;
-
-        return result;
-    };
-    var _event = _protoEvent;
+    
+    //var _event = _protoEvent;
     
     /**
      *  Returns the value of window[variable], retaining the original variable

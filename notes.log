@@ -1,0 +1,40 @@
+2012 - 03 - 19
+   javascript:  objects that share a static prototype=
+                    Obj1 = function(int){this.value = int}
+                    Obj2 = function(int){this.value = int}
+                    prot = (function(){
+                      var _comon = 3;
+                      return function pr(){
+                        return {
+                            setC: function(int){return _comon = int},
+                            getC: function(){return _comon},
+                            getV: function(){return this.value}
+                        }
+                      }
+                    })()
+                    Obj1.prototype = new prot;
+                    Obj2.prototype = new prot;
+                 alt for proto:
+                        return function pr(){
+                               this.setC= function(int){return _comon = int};
+                               this.getC= function(){return _comon};
+                               this.getV= function(){return this.value};
+                          }
+                 this way prototype gets the correct obj type (pr)
+
+                 this is the same as when creating bojects with static
+                 variables. A closure @ function definition that returns the
+                 object constructor creates the static space. everythign defined
+                 outside the return value is static.
+
+                 var prototypeConstructor = (function(){
+                    var staticVars = values
+                    var hiddenVars = vals
+                    return function prototypeInterface(){
+                        this.accessors = function(){};
+                    }
+
+                 })()
+
+                 new prototypeConstructor returns obj prototypeInterface
+
