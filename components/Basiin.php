@@ -29,7 +29,7 @@ class Basiin{
     
     //How many simultaneous BTransfers can a transaction do
     const MaxConcursiveTransfers = 8;
-    const MaxConcursiveTransferPackets = 1; //can't figure out atomic writes to file
+    const MaxConcursiveTransferPackets = 3; //can't figure out atomic writes to file
     const MaxConcursiveElements = 8;//active script tags (sum of all Transfers)
     const TransferTTL = 1800;// 2min?
     const IdDigits = 9; //used to calculate Packet sizes

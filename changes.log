@@ -112,3 +112,16 @@ NOTE: use:
 
     TODO:               after fixing the File object to use the new obj proto
                         als fix: Transfer, Packet, _element & _loader
+
+
+2012 - 03 - 21
+    init.Transfer.js    Completed the transfer procedure, all seems to be 
+                        working now
+    TranferController   receive now works with out of order packets, packets are
+                        deposited as .packet{int} files and are merged on
+                        successful finalize
+    init objects        changing the way the even system is prototyped, in the
+                        current implementation the event object is global
+                        amongst all same objects and since I can't figure out
+                        how to correctly segment each object's event space it is
+                        a better idea to have completely separate event objects.

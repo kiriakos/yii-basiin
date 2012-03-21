@@ -6,7 +6,13 @@ function File(o)
     var _backup;
     
     /* defaults */
-    var _params={'tag':null, 'file':null, 'onLoad':null, 'element':null, 'variable':null}
+    var _params={
+            'tag':null,
+            'file':null,
+            'onLoad':null,
+            'element':null,
+            'variable':null
+        }
 
        
     function _fileLoaded(){
@@ -24,6 +30,7 @@ function File(o)
     this.queued     = function _queued () {return _state == _states.queued}
     this.uninstalled= function _uninstalled(){return _state == _state.uninstalled;}
 
+    this.uName      = "File Installation: "+ o.tag+ " ("+o.file+ ")"
 
     /* public methods */
     this.install = function _install()
@@ -68,12 +75,9 @@ function File(o)
 
     //create an event hook to the default install behavior if no onLoad hook exists
     if (!_params.onLoad) _params.onLoad = _extend(_params.tag, _pickUp(_params.variable), true);
-
-    //this.__proto__ = new BasiinObjectPrototype ();
-    //console.log(this)
     
     var that = this;
-    this.addEvents(_params);
+    this.event = this.addEvents(_params);
 
 }
 File.prototype = new BasiinObjectPrototype();

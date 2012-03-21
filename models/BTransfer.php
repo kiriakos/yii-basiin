@@ -20,7 +20,7 @@
  * @property Transaction $transaction
  */
 class BTransfer extends EBasiinActiveRecord
-{        
+{
 
     /**************************************************************************
      **************************** Yii specififc *******************************

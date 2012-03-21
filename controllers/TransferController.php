@@ -65,13 +65,12 @@ class TransferController extends Controller
          * @param integer $transferId       
          * @param integer $packetIndex      
          * @param string $rand              a random seed for the browser side, irrelevant
-         * @param integer $startChar        DEPRECATED?
          * @param integer $decode           int to bool
          * @param string packetData         the actual data
          * @return boolean
          */
         public function actionReceive($transactionId, $transferId, $packetIndex,
-                                     $rand, $startChar, $decode, $packetData)
+                                     $rand, $decode, $packetData)
 	{
             $requestValid   = false;
             $result=false;
@@ -80,7 +79,7 @@ class TransferController extends Controller
             $transactionId  = (int) $transactionId;
             $transferId     = (int) $transferId;
             $packetIndex    = (int) $packetIndex;
-            $startChar      = (int) $startChar;
+
             $decode = ((int)$decode === 1)? true:false;
             
             $transaction = Basiin::getTransaction ($transactionId);
@@ -89,50 +88,33 @@ class TransferController extends Controller
             if ($transfer === false)
                     return false; //just for god measure, failure is handled by gettransfer now
 
-            // enforce packet continuity:
-            // check if this is the correct piece otherwise sleep
-            $retries=0;
-            while ($retries++ < 5 && $packetIndex != $transfer->piece_next ){
-                    sleep (5);
-                    //TODO: this doesn't work, I need to refresh the transfers object too
-                    $ref = $transfer->refresh(); // = $transaction->getTransfer ($transferId);
-                    if (!$ref) die('transfer doesn\'t exist anymore');
-            }
             
-            $requestValid = ($packetIndex == $transfer->piece_next);
-            // if the wait didn't solve the problem, the packet is either stale or too far ahead
-
             $vars = array(
                 'variableName'=>$transfer->variable_name,
                 'packetIndex'=>$packetIndex,
                 'success'=>$result,
-                'output'=> 'packet not delivered due to uber '.
-                    (($packetIndex > $transfer->piece_next)?'freshness':'staleness'),
+                'output'=> '',
             );
             
-            if ($requestValid) //req params should be checked by now, append that data
+            if ($decode) $packetData = rawurldecode ($packetData);
+            //BECAUSE_OF_APACHE on js data is enc twice while on serv decoded once
+
+            //since this session has said Transaction & Transfer append $packetData to file
+            $file = Yii::getPathOfAlias('basiin.incomming').
+                        DIRECTORY_SEPARATOR. $transfer->file_name.'.packet'.$packetIndex;
+
+            $fp = fopen($file,'w');
+            $result = fwrite($fp, $packetData);// int or false
+            $closed = fclose($fp);
+
+            if (!$closed) //TODO:  fail the transfer or re-initialize
             {
-                if ($decode) $packetData = rawurldecode ($packetData);
-                $packetData = rawurldecode ($packetData);//BECAUSE_OF_APACHE reverse the second enc
-                
-                //since this session has said Transaction & Transfer append $packetData to file
-                $file = Yii::getPathOfAlias('basiin.incomming').
-                            DIRECTORY_SEPARATOR. $transfer->file_name;
-
-                $start= $startChar;
-
-                $fp = fopen($file,'a');
-                $result = fwrite($fp, $packetData);// int or false
-                $closed = fclose($fp);
-                
-                if (!$closed) //TODO:  fail the transfer or re-initialize
-                {
-                    $vars['output'] = "File didn't close properly! Written:". $result. " bytes. Data length: ". strlen($packetData);
-                }
-                else
-                    $vars['output'] = "Written:". $result. " bytes. Data length: ". strlen($packetData);
+                $vars['output'] = "File didn't close properly! Written:". $result. " bytes. Data length: ". strlen($packetData);
             }
+            else
+                $vars['output'] = "Written:". $result. " bytes. Data length: ". strlen($packetData);
 
+            
             if(isset($vars['output']))
                 $vars['output'] =CJavaScript::encode($vars['output']);
             
@@ -184,17 +166,30 @@ class TransferController extends Controller
                     'data' => null
                 );
 
+                $completed = false;
                 if (!$completed)
                 {
                     $vars["success"]= false;
                     $vars["data"]= array(
                         'packets'=>$transfer->pieces->getMissingPieces($packetCount),
                     );
+                    
+                    /**resend test *
+                    $vars["success"]= false;
+                    $vars["data"]= array( 'packets' =>array(1,2));
+                    /* */
+                }
+                else
+                {
+                    $basedir = Yii::getPathOfAlias('basiin');
+                    $cmd = Yii::getPathOfAlias('basiin.bin'). "/mergeFiles.sh ".
+                            "'{$transfer->file_name}' '{$basedir}' 2>&1".
+                            " {$basedir}/data/mergeFiles.log &";
+                    $vars["output"] = array( $cmd );
+                    exec($cmd, $vars["output"], $vars['data']);
                 }
 
-                //test
-                $vars["success"]= false;
-                $vars["data"]= array( 'packets' =>array(1,2));
+
 
                 $rendered = Basiin::renderFile('packet', $this, $vars);
                 

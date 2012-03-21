@@ -39,7 +39,7 @@ function Packet (url, identity, options)
      */
     function _validate(result)
     {
-        var event = that.event('validate');
+        var event = that.event('beforeValidate');
         if (event === undefined) event = true;
 
         return event;
@@ -64,7 +64,12 @@ function Packet (url, identity, options)
     }
 
     this.getResult = function (){return _result;}
-    this.getIdentity = function (){ return identity; }
+    this.getIdentity = function (){return identity;}
+    this.getUrl = function(){return url}
+
+    this.uName = "Packet: "+ this.getPacketName();
+    
+
     this.fail = _failize;
     this.send = function _send(){
         if ( that.isTransfering() || that.isCompleted() )
@@ -73,7 +78,7 @@ function Packet (url, identity, options)
         that.event('beforeSend');
 
         if (  that.isFailed() && url[0]=='tell' ) //a transfer packet
-            url[5]=_hash(Math.random()).substr(0,5);
+            url[4]=_hash(Math.random()).substr(0,2);
         else if ( that.isFailed() && url.push !== undefined )//an array ask packet
             url.push(_hash(Math.random()).substr(0,2));//2chars,don't want to flood the urlspace
         else if ( that.isFailed())
@@ -84,6 +89,7 @@ function Packet (url, identity, options)
         var loadFunc = function() //called when the packet arrives and is valid js
         {
             _result = _pickUp(options.variable);
+            that.addEvents(_result.events, true);
 
             if ( _result === undefined ||  _validate(_result))
                 _finalize();
@@ -94,6 +100,9 @@ function Packet (url, identity, options)
         var failFunc = function() //called on error (eg: server 500) or js error
         {
             _result = _pickUp(options.variable);
+
+            if(_result) that.addEvents(_result.events, true);
+            
             _failize()
         }
 
@@ -136,7 +145,7 @@ function Packet (url, identity, options)
     //make sure the options object actually exists
     if (options === undefined) options={};
     //install the events
-    this.addEvents(options);
+    this.event = this.addEvents(options);
 
 }
 Packet.prototype = new BasiinObjectPrototype ();

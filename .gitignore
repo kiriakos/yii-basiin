@@ -1,5 +1,6 @@
 #ignore the incomming dir
 incomming/*
+recieved/*
 
 #don't ignore the database, changes to it may not be reflected in Basiin.db.sql
 #data/basiin.db

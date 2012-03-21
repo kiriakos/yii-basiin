@@ -130,18 +130,20 @@ var Transfer = function (o, encodeData)
         }
         else
             _log('Transfer still has unsent packets, generating')
+        
         var encode, decode;
-        if(encodeData !== false) encode = decode = true;
-        else encode = decode = false;
+        if(encodeData !== false) //if no explicitly set to false on new Transfer
+            encode = decode = true;
+        else
+            encode = decode = false;
 
         //get the next piece from _params.data
         var url  = _params.packetUrl.slice(0);
         url.push(
             _params.serverSideId, // srvVar transferId
             _params.packets.length, // srvVar packetIndex
-            _params.dataPointer, // srvVar startChar
             (decode)?1:0, // srvVar decode
-            _hash(Math.random()).substr(0,5)
+            _hash(Math.random()).substr(0,2)
         );
 
         //generate the pacet's identity object (usefull for dropped packets etc)
@@ -181,18 +183,18 @@ var Transfer = function (o, encodeData)
 
         var options = {
             'variable': _params.variable,
-            'onSend': function (){ _activeElements++; },
-            'onLoad': function () { 
+            'onAfterSend': function (){ _activeElements++; },
+            'onAfterLoad': function () {
                 _activeElements--;
                 if (that.isCompleted()) _doFinalize()
                 
-                that.event('PacketLoad');
+                that.event('afterPacketLoad');
             },
-            'onError': function () {
+            'onAfterError': function () {
                 _activeElements--;
-                that.event('PacketError')
+                that.event('afterPacketError')
             },
-            'onValidate': _validateDataPacket
+            'onBeforeValidate': _validateDataPacket
         }
         //create a new packet with that piece
         var packet = new Packet ( url, id , options);
@@ -211,6 +213,7 @@ var Transfer = function (o, encodeData)
     {
         that.event('beforePacketValidate');
 
+        _log('validating recieved packet'+ event.object.getUrl());
         var packet = event.object;
         var result = packet.getResult();
         var identity = packet.getIdentity();
@@ -269,13 +272,13 @@ var Transfer = function (o, encodeData)
      *  called only by _getPacket after _isCompleted initiate finalize proc
      */
     function _doFinalize (){
-        that.event('Finalize', '(Before)');
+        that.event('beforeFinalize');
         _state = _states.finalizing;
 
         _loader.ask(['basiin', 'transfer', 'finalize', _transaction.id,
             _params.serverSideId, _params.packets.length], {
-                'onLoad': _doFinalizeResponse,
-                'onError': _doFinalizeResponse,
+                'onAfterLoad': _doFinalizeResponse,
+                'onAfterError': _doFinalizeResponse,
                 'variable': _params.variable
             }
         )
@@ -508,11 +511,20 @@ var Transfer = function (o, encodeData)
             'packetUrl': [ 'tell' ],
 
             /* event Hooks */
-            'onComplete':null,
-            'onTimeOut':null, //fired as last procedure of doTimeOut()
-            'onAnnounce':null, //fired before _announceResponse
-            'onError':null, //TODO
-            'onDeque':null, //fired when the  transfer changes from queued to transfering, before proceed
+            'onBeforeComplete':null,
+            'onAfterComplete':null,
+            'onBeforePacketLoad':null,
+            'onAfterPacketLoad':null,
+            'onBeforePacketError':null,
+            'onAfterPacketError':null,
+            'onBeforeTimeOut':null, //fired as last procedure of doTimeOut()
+            'onAfterTimeOut':null, //fired as last procedure of doTimeOut()
+            'onBeforeAnnounce':null, //fired before _announceResponse
+            'onAfterAnnounce':null, //fired before _announceResponse
+            'onBeforeError':null, //TODO
+            'onAfterError':null, //TODO
+            'onBeforeDeque':null, //fired when the  transfer changes from queued to transfering, before proceed
+            'onAfterDeque':null, //fired when the  transfer changes from queued to transfering, before proceed
 
 
             /* locked params (init generated) */
@@ -609,13 +621,15 @@ var Transfer = function (o, encodeData)
     _log('Targeted packet size is '+ _params.packetSize+ " characters", 2);
     _log('Targeted packet count is '+ _params.packetsTotalNeeded , 2);
 
+    
+    this.uName = "Transfer: "+ _params.tag;
     //initialize events subsystem
-    this.addEvents(_params);
+    this.event = this.addEvents(_params);
 
     this.touch();
     _announce();
 
-    this.event('afterInitialize');
+    that.event('afterInitialize');
 
 }
 Transfer.prototype = new BasiinObjectPrototype ();
