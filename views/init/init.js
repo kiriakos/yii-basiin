@@ -146,6 +146,8 @@
     {
         if(revert === undefined) revert = null;
 
+        if(variable === undefined) _log('ERROR: No variable name given! Something went wrong!')
+
         result = window[variable];
         if(!retain) window[variable] = revert;
 

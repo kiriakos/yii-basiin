@@ -10,7 +10,7 @@
  *
  */
 
-var $variable_name = { // eg: $transfer__variable_name Packet.options.variable
+var $variableName = { // eg: $transfer__variable_name Packet.options.variable
                        //is the client side container of this value
 
     //Identity (the var name is also a part)

@@ -12,8 +12,7 @@ function File(o)
     function _fileLoaded(){
         if(_state==_states.installing)
         {
-            console.log(that)
-            that.event('load')
+            that.event('afterLoad')
         }
     }
 
@@ -55,7 +54,7 @@ function File(o)
     {
         if(this.uninstalled())
         {
-            _extended = _extend (_params.tag, _backup, force);
+            var _extended = _extend (_params.tag, _backup, force);
             if (_extended) _state = _states.installed;
             return _extended;
         }
@@ -75,7 +74,6 @@ function File(o)
     
     var that = this;
     this.addEvents(_params);
-    console.log(this.registeredEvents())
 
 }
 File.prototype = new BasiinObjectPrototype();

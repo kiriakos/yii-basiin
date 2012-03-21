@@ -5,76 +5,49 @@
  */
 function Packet (url, identity, options)
 {
-    var _state  = 0;
-    var _states = {'pending':0, 'transfering':1, 'completed':2, 'failed':3};
-    var _element;
-    var _result;
-
-    //make sure the options object actually exists
-    if (options === undefined) options={};
-    //install the events
-    addEvents(options);
-
-    function _pending (){return (_state==_states.pending)}
-    function _transfering(){return (_state==_states.transfering)}
-    function _completed(){return (_state==_states.completed)}
-    function _failed(){return _state == _states.failed} //failed timed out etc..
-
     function _finalize()
     {
-        event('beforeLoad');
+        that.event('beforeLoad');
         _state = _states.completed;
         
 
         if (options && options.variable &&
                 _result && _result.output)
-            _log('response output: '+ _result.output)
-        event('afterLoad');
+            _log('response output: '+ _result.output, 5)
+        that.event('afterLoad');
     }
     
     function _failize()
     {
-        event('beforeError');
+        that.event('beforeError');
 
         _state = _states.failed;
-        _log('Failing packet '+ _getPacketName());
+        _log('Failing packet '+  that.getPacketName());
         
         if (options && options.variable &&
                 _result && _result.output)
             _log('response output: '+ _result.output)
 
-        event('afterError');
+        that.event('afterError');
 
     }
     
     /**
-     * makes shure the data was sent correctly otherwise returns false
+     * Event hook to run custom packet validation code
      *
      * default return is false
      */
     function _validate(result)
     {
-        event('beforeValidate');
-        //if this isn't the correct obj or the action failed (success = false)
-        if (result.packetIndex != identity.index) return false;
+        var event = that.event('validate');
+        if (event === undefined) event = true;
 
-        
-        var valid = (result.success !== false)
-
-        //TODO implement a packet hashing & validation scheme between php & js
-
-        if (valid === true)
-            _log('Packet.loadFunction: packet '+ _getPacketName()+ ' successfully sent!', 3)
-        else
-            _log("Packet.loadFunction: packet "+ _getPacketName()+ " wasn't delivered properly",3)
-
-        event('afterValidate');
-        return valid;
+        return event;
     }
 
 
     //getters
-    function _getPacketName()
+    this.getPacketName = function ()
     {
         var id = identity;
         if (id)
@@ -90,55 +63,80 @@ function Packet (url, identity, options)
         return "Nameless Packet"
     }
 
-    return {
-        'getElement':function(){return _element;},
-        'getResult':function(){return _result;},
-        
-        'pending': _pending,
-        'transfering': _transfering,
-        'completed': _completed,
-        'failed':_failed,
-        'fail':_failize, //in case you want to forcefully fail the packet
-        
-        //return a copy of the Pacet's identity object
-        'id':_getPacketName,
+    this.getResult = function (){return _result;}
+    this.getIdentity = function (){ return identity; }
+    this.fail = _failize;
+    this.send = function _send(){
+        if ( that.isTransfering() || that.isCompleted() )
+            return false;
 
-        'send':function(){
-            if ( _transfering() || _completed() )
-                return false;
+        that.event('beforeSend');
 
-            event('beforeSend');
-            
-            if ( _failed() && url[0]=='tell' ) //a transfer packet
-                url[5]=_hash(Math.random()).substr(0,5);
-            else if (_failed() && url.push !== undefined )//an array ask packet
-                url.push(_hash(Math.random()).substr(0,2));//2chars,don't want to flood the urlspace
-            else if (_failed())
-                url+="/"+_hash(Math.random()).substr(0,2);
-            
-            _state=_states.transfering;
-            
-            var loadFunc = function() //called when the packet arrives and is valid js
-            {
-                _result = _pickUp(options.variable);
-                
-                if ( _result === undefined ||  _validate(_result))
-                    _finalize();
-                else
-                    _failize();
-            }
+        if (  that.isFailed() && url[0]=='tell' ) //a transfer packet
+            url[5]=_hash(Math.random()).substr(0,5);
+        else if ( that.isFailed() && url.push !== undefined )//an array ask packet
+            url.push(_hash(Math.random()).substr(0,2));//2chars,don't want to flood the urlspace
+        else if ( that.isFailed())
+            url+="/"+_hash(Math.random()).substr(0,2);
 
-            var failFunc = function() //called on error (eg: server 500) or js error
-            {
-                _result = _pickUp(options.variable);
-                _failize()
-            }
-            
-            _element = _elements.script( url, loadFunc, failFunc );
+        _state=_states.transfering;
 
-            event('afterSend');
-            return true;
+        var loadFunc = function() //called when the packet arrives and is valid js
+        {
+            _result = _pickUp(options.variable);
+
+            if ( _result === undefined ||  _validate(_result))
+                _finalize();
+            else
+                _failize();
         }
-    };
+
+        var failFunc = function() //called on error (eg: server 500) or js error
+        {
+            _result = _pickUp(options.variable);
+            _failize()
+        }
+
+        _element = _elements.script( url, loadFunc, failFunc );
+
+        that.event('afterSend');
+        return true;
+    }
+    
+    
+    this.isPending = function _pending (){return (_state==_states.pending)}
+    this.isTransfering = function (){return (_state==_states.transfering)}
+    this.isCompleted = function ()
+    {
+        var result = (_state==_states.completed);
+        _log('Packet '+ this.getPacketName()+ ' isCompleted question:'+ result.toString(), 5)
+        return result
+    }
+    
+    this.isFailed = function (){return _state == _states.failed} //failed timed out etc..
+
+
+    this.eval = function(string){
+        if (debug)
+            return eval(string);
+
+        return false;
+    }
+    
+    /**************************************************************************/
+    /******************************** INIT ************************************/
+    /**No need to put it in a function call, this is supposed to be exec once**/
+    /**************************************************************************/
+
+    var _state  = 0;
+    var _states = {'pending':0, 'transfering':1, 'completed':2, 'failed':3};
+    var _element;
+    var _result;
+    var that = this;
+    //make sure the options object actually exists
+    if (options === undefined) options={};
+    //install the events
+    this.addEvents(options);
+
 }
 Packet.prototype = new BasiinObjectPrototype ();

@@ -49,8 +49,8 @@ class TransferController extends Controller
 
             $rendered = Basiin::renderFile(
                         'packet',$this,array(
-                            'variable_name'=>$transfer->variable_name,
-                            'sucess'=>true,
+                            'variableName'=>$transfer->variable_name,
+                            'success'=>true,
                             'data'=>$transfer->id,
                             ),False);
 
@@ -94,14 +94,16 @@ class TransferController extends Controller
             $retries=0;
             while ($retries++ < 5 && $packetIndex != $transfer->piece_next ){
                     sleep (5);
-                    $transfer = $transaction->getTransfer ($transferId);
+                    //TODO: this doesn't work, I need to refresh the transfers object too
+                    $ref = $transfer->refresh(); // = $transaction->getTransfer ($transferId);
+                    if (!$ref) die('transfer doesn\'t exist anymore');
             }
             
             $requestValid = ($packetIndex == $transfer->piece_next);
             // if the wait didn't solve the problem, the packet is either stale or too far ahead
 
             $vars = array(
-                'variable_name'=>$transfer->variable_name,
+                'variableName'=>$transfer->variable_name,
                 'packetIndex'=>$packetIndex,
                 'success'=>$result,
                 'output'=> 'packet not delivered due to uber '.
@@ -130,6 +132,9 @@ class TransferController extends Controller
                 else
                     $vars['output'] = "Written:". $result. " bytes. Data length: ". strlen($packetData);
             }
+
+            if(isset($vars['output']))
+                $vars['output'] =CJavaScript::encode($vars['output']);
             
             if($result !== false)
             {   
@@ -174,6 +179,7 @@ class TransferController extends Controller
                 $completed = $transfer->pieces->Completed($packetCount);
 
                 $vars = array(
+                    'variableName'=>$transfer->variable_name,
                     'success'=>true,
                     'data' => null
                 );
@@ -181,8 +187,14 @@ class TransferController extends Controller
                 if (!$completed)
                 {
                     $vars["success"]= false;
-                    $vars["data"]= $transfer->pieces->getMissingPieces($packetCount);
+                    $vars["data"]= array(
+                        'packets'=>$transfer->pieces->getMissingPieces($packetCount),
+                    );
                 }
+
+                //test
+                $vars["success"]= false;
+                $vars["data"]= array( 'packets' =>array(1,2));
 
                 $rendered = Basiin::renderFile('packet', $this, $vars);
                 

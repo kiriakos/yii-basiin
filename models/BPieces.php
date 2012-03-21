@@ -124,7 +124,7 @@ class BPieces extends EBasiinActiveRecord
             $this->accessed = true;
             $pieceCount = strlen($this->pieces);
 
-            if ($index<1) return false;
+            if ($index<0) return false;
             if ($index > $pieceCount) //pad the pieces string if the initial estimation went overboard
             {
                 $overflow = $index - $pieceCount ;
@@ -132,7 +132,7 @@ class BPieces extends EBasiinActiveRecord
                 $this->pieces.= $extra;
             }
 
-            $this->pieces = substr_replace( $this->pieces, 1, $index -1, 1);
+            $this->pieces = substr_replace( $this->pieces, 1, $index , 1);
 
             return $this->pieces;
         }
@@ -173,10 +173,11 @@ class BPieces extends EBasiinActiveRecord
             $string = substr($this->pieces, 0, $pieceCount );
             $offset = 0;
             
-            while ($offset < (int) $pieceCount )
-                if ( ($piece = strpos($string, '0')) !==false )
-                        $results[]=$piece;
-                
+            while (($piece = strpos($string, '0', $offset)) !==false )
+            {
+                $results[]=$piece;
+                $offset = $piece+1;
+            }
             return $results;
         }
 

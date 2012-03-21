@@ -163,12 +163,12 @@ var _loader = (function(){
             file.install();
         }
         while( _loader.hasBandwidth() &&
-                ( (transfer  = _getTransfer( {'transfering':true, 'hasUnsentPackets':true, 'hasAvailableElements':true} ))  ||
-                    (transfer = _getTransfer({'queued':true})) ) )
+                ( (transfer  = _getTransfer( {'isTransfering':true, 'hasUnsentPackets':true, 'hasAvailableElements':true} ))  ||
+                    (transfer = _getTransfer({'isQueued':true})) ) )
         {
-            if (transfer.queued())
+            if (transfer.isQueued())
                 transfer.start();
-            if (transfer.transfering())
+            if (transfer.isTransfering())
                 transfer.proceed();
         }
     }

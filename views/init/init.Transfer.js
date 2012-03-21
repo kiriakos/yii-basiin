@@ -16,12 +16,11 @@
  * @method string status  returns the string version of the Transfers state
  *
  */
-var Transfer = function (o, encodeData) // tr = init options object
+var Transfer = function (o, encodeData)
 {
-return (function(){
-
-
+    /**************************************************************************/
     /*************************** PRIVATE METHODS ******************************/
+    /**************************************************************************/
 
     /* Controll */
 
@@ -31,20 +30,10 @@ return (function(){
         _params[param] = _varHash(Math.random());
     }
 
-    //generate script packets to send to server
-    function _proceed ()
-    {
-        var packet;
-        while ( _loader.hasBandwidth() && _isTransfering() && (packet = _getPacket())  )
-            packet.send();
-
-        _log("Transfer: "+ _params.tag+ " progress: "+ _getProgress());
-    }
-
     /**
      *  Tell the server about the transfer and await confirmation
      */
-    function _announce()
+    function _announce ()
     {
         if (_state > _states.announcing)
             return false;
@@ -53,7 +42,7 @@ return (function(){
 
         //the new/tell call will return an object with: tranferId
         var onLoad = function(){
-            event('afterAnnounce');
+            that.event('afterAnnounce');
             return _announceResponse(_pickUp(_params.variable));
         };
 
@@ -65,7 +54,8 @@ return (function(){
         return true;
         
     }
-    function _announceResponse(response) // onLoad handler of the announce request
+
+    function _announceResponse (response) // onLoad handler of the announce request
     {
         if (response === undefined) return alert('the announce response\'s variable is undefined')
         else if (response === false) return alert('the new transfer request was denied by the server')
@@ -80,60 +70,12 @@ return (function(){
         return true;
     }
 
-    /**
-     *  Start or resume the transfering of Pieces
-     */
-    function _start ()
-    {
-        if (_state == _states.queued || _state == _states.paused)
-        {
-
-            event('beforeDeque');
-            _state = _states.transfering;
-            event('afterDeque');
-            
-            _proceed();
-
-            
-            return true;
-        }
-        return _state;
-    }
-
-    /**
-     *  Pause the transfering of pieces
-     */
-    function _pause ()
-    {
-        if (_state == _states.transfering)
-        {
-            _log('Transfer: '+ _params.tag+ " pausing", 2 )
-            _state = _states.paused;
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     *  Updates the timeout counter
-     */
-    function _touch()
-    {
-        var now = Math.round((new Date()).getTime() / 1000);
-
-        // init
-        if ( _params.started==null ) _params.started = now;
-
-        // cycling while Transfer is active
-        if (!_has_timed_out) _setTimeOut()
-
-        return !_has_timed_out
-    }
+    
 
     /**
      *  Every time the transfer resumes from idleness
      */
-    function _setTimeOut()
+    function _setTimeOut ()
     {
         if (!_has_timed_out)
         {
@@ -149,85 +91,45 @@ return (function(){
     /**
      *  Procedure: when the transfer completes
      */
-    function _stopTimeOut(){clearTimeout(_time_out_object)}
+    function _stopTimeOut (){clearTimeout(_time_out_object)}
 
     /**
      *  executes the logic of a Transfer time out
      */
-    function _doTimeOut(){
+    function _doTimeOut (){
 
-        event('timeOut', '(before)');
+        that.event('timeOut', '(before)');
         _log('Transfer: '+ _params.tag+ " timed out");
         _has_timed_out = true;
-        event('afterTimeOut');
+        that.event('afterTimeOut');
         
     }
 
     /**
      *  Do the completion logic
      */
-    function _doComplete()
+    function _doComplete ()
     {
-        event('beforeComplete')
+        that.event('beforeComplete')
         _state = _states.complete;
         _stopTimeOut();
-        event('Complete', '(after)');
+        that.event('Complete', '(after)');
         return true;
-    }
-
-    /* Query */
-
-    /**
-     *  Returns the progress percentage as a decimal
-     */
-    function _getProgress(){
-
-        //get optimum progress dataPointer/data.length
-        var optimum = _params.dataPointer/_params.data.length
-        
-        //calc % of delivered packets
-        var completed = 0;var all = _params.packets.length;
-
-        for (var i=0;i<_params.packets.length; i++)
-           if (_params.packets[i].completed()) completed++;    
-
-        return (all>0)?optimum*completed/all:0;
-    }
-
-    /**
-     *  Boolean true if all pieces have been recieved by the server
-     */
-    function _isCompleted ()
-    {
-        if (_state == _states.transfering )
-        {
-            for (var i=0; i<_params.packets.length; i++)
-                if (!_params.packets[i].completed())
-                    return false;
-
-            //
-            return _doComplete();
-        }
-        else if (_state == _states.complete) return true;
-        
-        return false;
-    }
-    function _isQueued(){return _state == _states.queued}
-    function _isPaused(){return _state == _states.paused}
-    function _isTransfering(){return _state == _states.transfering}
-    function _hasTimedOut(){
-        return _has_timed_out;
     }
 
     /**
      *  Maker function,Creates a Packet object from unsent data
      *  
      */
-    function _getNewPacket()
+    function _getNewPacket ()
     {
-        if (!_hasUnsentPackets())
+        if (that.hasUnsentPackets() == false)
+        {
+            _log('Transfer has created all the packets, returning false')
             return false;
-        
+        }
+        else
+            _log('Transfer still has unsent packets, generating')
         var encode, decode;
         if(encodeData !== false) encode = decode = true;
         else encode = decode = false;
@@ -282,12 +184,15 @@ return (function(){
             'onSend': function (){ _activeElements++; },
             'onLoad': function () { 
                 _activeElements--;
-                if (_params.onLoad) _params.onLoad();
+                if (that.isCompleted()) _doFinalize()
+                
+                that.event('PacketLoad');
             },
             'onError': function () {
                 _activeElements--;
-                if (_params.onError) _params.onError();
-            }
+                that.event('PacketError')
+            },
+            'onValidate': _validateDataPacket
         }
         //create a new packet with that piece
         var packet = new Packet ( url, id , options);
@@ -297,10 +202,39 @@ return (function(){
         
     }
 
-    function _getFailedPacket()
+    /**
+     *  validates that the packet was correctly sent to the server
+     *
+     *  called by Packet.afterLoad
+     */
+    function _validateDataPacket(event)
+    {
+        that.event('beforePacketValidate');
+
+        var packet = event.object;
+        var result = packet.getResult();
+        var identity = packet.getIdentity();
+        
+        //if this isn't the correct obj or the action failed (success = false)
+        if (result.packetIndex != identity.index) return false;
+
+        var valid = (result.success !== false)
+
+        //TODO implement a packet hashing & validation scheme between php & js
+
+        if (valid === true)
+            _log('Packet.loadFunction: packet '+  packet.getPacketName()+ ' successfully sent!', 3)
+        else
+            _log("Packet.loadFunction: packet "+  packet.getPacketName()+ " wasn't delivered properly",3)
+
+        that.event('afterPacketValidate');
+        return valid;
+    }
+
+    function _getFailedPacket ()
     {
         for (var i=0; i<_params.packets.length; i++)
-            if (_params.packets[i].failed())
+            if (_params.packets[i].isFailed())
                 return _params.packets[i];
 
         return false;
@@ -309,22 +243,24 @@ return (function(){
     /**
      * If there is data left to transfer return a Packet instance else false
      */
-    function _getPacket ()
+    function _getPacket()
     {
-        if ( !_hasAvailableElements() || _hasTimedOut()   )
+        if ( !that.hasAvailableElements() || that.hasTimedOut()   )
             return false;
 
         var packet;
-        _log('trying existing packets',1);
+        
+        _log('trying existing packets',2);
         if ( (packet = _getFailedPacket()) )
             return packet;
-        _log('trying new packet',1);
+
+        _log('trying new packet',2);
         if ( (packet = _getNewPacket()) )
             return packet;
 
-        if (_isCompleted()) _doFinalize()
+        _log('Transfer checking completion',2)
+        if (that.isCompleted()) _doFinalize()
             
-
         return false; //when no packets are availavble
         
     }
@@ -332,20 +268,21 @@ return (function(){
     /**
      *  called only by _getPacket after _isCompleted initiate finalize proc
      */
-    function _doFinalize(){
-        event('Finalize', '(Before)');
+    function _doFinalize (){
+        that.event('Finalize', '(Before)');
         _state = _states.finalizing;
 
         _loader.ask(['basiin', 'transfer', 'finalize', _transaction.id,
             _params.serverSideId, _params.packets.length], {
                 'onLoad': _doFinalizeResponse,
-                'onError': _doFinalizeResponse
+                'onError': _doFinalizeResponse,
+                'variable': _params.variable
             }
         )
-        event('Finalize', '(After)');
+        
     }
 
-    function _doFinalizeResponse(event)
+    function _doFinalizeResponse (event)
     {
         var result = event.object.getResult();
 
@@ -355,28 +292,142 @@ return (function(){
         if (result.success === true)
             _doComplete();
 
-        else if (result.error)
+        else if (result.data)
             _failPackets(result.data.packets);
 
         else
             _restartTransfer();
-        
+
+        that.event('afterFinalize');
     }
 
-    function _failPackets(failed)
+    function _failPackets (failed)
     {
         
         for (var i=0; i< failed.length; i++)
-            _params.packets[i].fail();
+            _params.packets[failed[i]].fail();
 
         _state = _states.transfering;
         
     }
 
-    function _restartTransfer()
+    function _restartTransfer ()
     {
-        event("Restart" , '(Before)');
-        _log('transfer '+ _params.tag + ' failed completely. please restart')
+        that.event("Restart" , '(Before)');
+        _log('Unimplemented! Transfer '+ _params.tag + ' failed completely. please restart')
+    }
+
+
+    /**************************************************************************/
+    /****************************** INTERFACE *********************************/
+    /**************************************************************************/
+
+    /* Controlling */
+    /**
+     *  Start or resume the transfering of Pieces
+     */
+    this.start = function ()
+    {
+        if (_state == _states.queued || _state == _states.paused)
+        {
+
+            that.event('beforeDeque');
+            _state = _states.transfering;
+            that.event('afterDeque');
+
+            that.proceed();
+
+
+            return true;
+        }
+        return _state;
+    }
+
+    /**
+     *  Continue the transfer, generate and send script packets to the server
+     */
+    this.proceed = function ()
+    {
+        _log('proceeding transfer '+ _params.tag)
+        var packet;
+        while ( _loader.hasBandwidth() && that.isTransfering() && (packet = _getPacket())  )
+            packet.send();
+
+    }
+
+    /**
+     *  Pause the transfering of pieces
+     */
+    this.pause = function ()
+    {
+        if (_state == _states.transfering)
+        {
+            _log('Transfer: '+ _params.tag+ " pausing", 2 )
+            _state = _states.paused;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     *  Updates the timeout counter
+     */
+    this.touch = function ()
+    {
+        var now = Math.round((new Date()).getTime() / 1000);
+
+        // init
+        if ( _params.started==null ) _params.started = now;
+
+        // cycling while Transfer is active
+        if (!_has_timed_out) _setTimeOut()
+
+        return !_has_timed_out
+    }
+
+    /* Querying */
+
+    /**
+     *  Returns the progress percentage as a decimal
+     */
+    this.getProgress = function (){
+
+        //get optimum progress dataPointer/data.length
+        var optimum = _params.dataPointer/_params.data.length
+
+        //calc % of delivered packets
+        var completed = 0;var all = _params.packets.length;
+
+        for (var i=0;i<_params.packets.length; i++)
+           if (_params.packets[i].isCompleted()) completed++;
+
+        return (all>0)?optimum*completed/all:0;
+    }
+
+    /**
+     *  Boolean true if all pieces have been recieved by the server
+     */
+    this.isCompleted = function ()
+    {
+        _log("Transfer: "+ _params.tag+ " checking for completion")
+        if (_state == _states.transfering && that.getProgress() == 1 )
+        {
+            for (var i=0; i<_params.packets.length; i++)
+                if (!_params.packets[i].isCompleted())
+                    return false;
+
+            _log("Transfer: "+ _params.tag+ " all packets succesfully sent, verifying with server now")
+            return _doComplete();
+        }
+        else if (_state == _states.complete) return true;
+
+        return false;
+    }
+    this.isQueued = function (){return _state == _states.queued}
+    this.isPaused = function (){return _state == _states.paused}
+    this.isTransfering = function (){return _state == _states.transfering}
+    this.hasTimedOut = function (){
+        return _has_timed_out;
     }
 
     /**
@@ -387,33 +438,62 @@ return (function(){
      *  TODO: packets that have timed out.
      *  TODO: packets that were recieved corupted.
      */
-    function _hasUnsentPackets ()
+    this.hasUnsentPackets = function ()
     {
-        return ( _params.dataPointer < _params.data.length-1 );
-    }
-    function _hasAvailableElements ()
-    {
-        return (_activeElements < _transaction.maxTransferElements)
+        var result = ( _params.dataPointer < _params.data.length );
+
+        if (result == false)
+        {
+            for (var i=0; i<_params.packets.length; i++)
+                if (_params.packets[i].isFailed()){
+                    result = true;
+                    break;
+                }
+            
+        }
+
+        _log ("datapointer:"+ _params.dataPointer + "< data length:"+
+            _params.data.length+ " = "+ result.toString(), 5)
+        
+        return result;
     }
     
-    //moved Packet to _loader
+    this.hasAvailableElements = function ()
+    {
+        var result = (_activeElements < _transaction.maxTransferElements);
+        _log ("active:"+ _activeElements+ "< max:"+
+            _transaction.maxTransferElements+ " = "+ result.toString(), 5)
+        return result;
+    }
 
+    this.eval = function(string){
+        if (debug)
+            return eval(string);
+
+        return false;
+    }
+
+    /**************************************************************************/
     /************************** PRIVATE PROPERTIES ****************************/
-
+    /**************************************************************************/
+    
     //state dictionary
     var _states={'paused':-1, 'created':0, 'announcing':1, 'queued':2,
-                    'transfering':3, 'finalizing':3.2, 'complete':4};
+                    'transfering':3, 'finalizing':3.5, 'complete':4};
+
 
     /* status properies */
     var _state=_states.created;
     var _has_timed_out = false; // is set to true on timeout
     var _time_out_object=null;
     var _announced = false; //modified only by announce() and it's load function
-    var _countDown = false;
-    var _initialized = false;
+    
     var _self = undefined; //aliased to this on init()
     var _activeElements=0;
 
+    /* self ref */
+    var that = this;
+    
     /* instance parameters: undefined means param isn't overwritable */
     var _params = {
 
@@ -490,101 +570,52 @@ return (function(){
 
     }
 
+    /**************************************************************************/
     /******************************** INIT ************************************/
-
-    function _init()
-    {
-        if (_initialized) return true;
-        
-        // overwrite the defaults with the base arguments `o'
-        for( var option in o){if (_params[option] !== undefined) _params[option] = o[option]}
-
-
-        // Initialize the transfer object with default values + args
-        if (_params.tag == null) _params.tag = _varHash( (new Date()).getTime() );
-        if (_params.variable == undefined) _params.variable = _varHash( (new Date()).getMilliseconds );
-
-        // make tag & variable unique
-        while(_loader.getTransfer({'tag':_params.tag})){_reHash('tag');}
-        while(_loader.getTransfer({'variable':_params.variable})){_reHash('variable');}
-
-        /* assign protected instance parameters */
-
-        // calculate Packet Size
-        var urlLength =  _loader.createURL(_params.packetUrl).length+ 1+ _transaction.idDigits+ 1;
-        _params.packetSize = _browser.MaxUrlLength - urlLength;
-
-        // approximate the total amount of packets
-        _params.packetsTotalNeeded = Math.ceil(_params.data.length*3 / _params.packetSize);
-
-        //int keeps track of the position from which the next Packet's data will
-        //start. On init it obviously is at the begin of the string (position 0)
-        _params.dataPointer = 0;
-        _params.packets= []; // _getPiece pushes to this
-
-        _log('Targeted packet size is '+ _params.packetSize+ " characters");
-        _log('Targeted packet count is '+ _params.packetsTotalNeeded );
-        
-        //initialize events subsystem
-        this.addEvents(_params);
-        
-        _touch();
-        _announce();
-        
-
-        _init = function(){alert('you can\'t run init multiple times!');return false;}
-
-        event('afterInitialize');
-
-        return true;
-    }
+    /**No need to put it in a function call, this is supposed to be exec once**/
+    /**************************************************************************/
 
     
-
-    /****************************** INTERFACE *********************************/
-    
-    var _interface = {
-        'init': _init,
-//            function(){
-//            _initialized = _init();
-//            _self = this;
-//            return this;
-//        },
-
-        /* Controll*/
-        'start': _start,
-        'pause': _pause,
-        'proceed': _proceed,
-
-        /* Query - read only */
-        //base paraqms
-        'objectIdentifier': "Transfer: "+_params.tag,
-        'tag':function(){return _params.tag;},
-        'data':function(){return _params.data;},
-        'variable':function(){return _params.variable;},
-        'serverSideId':function(){return _params.serverSideId;},
+    // overwrite the defaults with the base arguments `o' undefined init value
+    // means not settable by options object
+    for( var option in o)
+    {if (_params[option] !== undefined) _params[option] = o[option]}
 
 
-        //state checking
-        'progress': _getProgress,
-        'queued': _isQueued,
-        'paused': _isPaused,
-        'transfering': _isTransfering,
-        'completed': _isCompleted,
-        'timedOut': _hasTimedOut,
-        'hasUnsentPackets': _hasUnsentPackets,
-        'hasAvailableElements': _hasAvailableElements,
+    // Initialize the transfer object with default values + args
+    if (_params.tag == null)
+        _params.tag = _varHash( (new Date()).getTime() );
+    if (_params.variable == undefined)
+        _params.variable = _varHash( (new Date()).getMilliseconds );
 
-    }
-    
-    if (debug)
-    {
-        _interface.e = function (string) {return eval(string);}
-    }
+    // make tag & variable unique
+    while(_loader.getTransfer({'tag':_params.tag}))
+        _reHash('tag');
+    while(_loader.getTransfer({'variable':_params.variable}))
+        _reHash('variable');
 
-    /******************************** RETURN **********************************/
+    // calculate Packet Size
+    var urlLength =  _loader.createURL(_params.packetUrl).length+ 1+ _transaction.idDigits+ 1;
+    _params.packetSize = _browser.MaxUrlLength - urlLength;
 
-    return _interface;
-})().init()
+    // approximate the total amount of packets (wild over estimate)
+    _params.packetsTotalNeeded = Math.ceil(_params.data.length*3 / _params.packetSize);
+
+    //int keeps track of the position from which the next Packet's data will
+    //start. On init it obviously is at the begin of the string (position 0)
+    _params.dataPointer = 0;
+    _params.packets= []; // _getPiece pushes to this
+
+    _log('Targeted packet size is '+ _params.packetSize+ " characters", 2);
+    _log('Targeted packet count is '+ _params.packetsTotalNeeded , 2);
+
+    //initialize events subsystem
+    this.addEvents(_params);
+
+    this.touch();
+    _announce();
+
+    this.event('afterInitialize');
+
 }
 Transfer.prototype = new BasiinObjectPrototype ();
