@@ -89,7 +89,7 @@ function Packet (url, identity, options)
         var loadFunc = function() //called when the packet arrives and is valid js
         {
             _result = _pickUp(options.variable);
-            that.addEvents(_result.events, true);
+            that.event.add(_result.events, true);
 
             if ( _result === undefined ||  _validate(_result))
                 _finalize();

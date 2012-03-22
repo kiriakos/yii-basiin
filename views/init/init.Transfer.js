@@ -213,7 +213,7 @@ var Transfer = function (o, encodeData)
     {
         that.event('beforePacketValidate');
 
-        _log('validating recieved packet'+ event.object.getUrl());
+        _log('validating recieved packet: '+ event.object.getPacketName());
         var packet = event.object;
         var result = packet.getResult();
         var identity = packet.getIdentity();

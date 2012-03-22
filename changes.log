@@ -125,3 +125,9 @@ NOTE: use:
                         amongst all same objects and since I can't figure out
                         how to correctly segment each object's event space it is
                         a better idea to have completely separate event objects.
+    BOP:                new event subsystem now you can call event() but also
+                        modify the events through: event.add(o,f) or see registered 
+                        events via event.events()
+    Transfer:           Tested validation, when the server returns missing
+                        packets on Finalize basiin will resend them without 
+                        errors.

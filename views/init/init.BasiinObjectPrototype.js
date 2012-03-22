@@ -132,8 +132,6 @@ function BasiinObjectPrototype () {
         }
 
         event.add(eventsObject);
-
-        console.log(event.add)
         return event;
     }
 

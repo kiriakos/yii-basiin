@@ -166,18 +166,12 @@ class TransferController extends Controller
                     'data' => null
                 );
 
-                $completed = false;
                 if (!$completed)
                 {
                     $vars["success"]= false;
                     $vars["data"]= array(
                         'packets'=>$transfer->pieces->getMissingPieces($packetCount),
                     );
-                    
-                    /**resend test *
-                    $vars["success"]= false;
-                    $vars["data"]= array( 'packets' =>array(1,2));
-                    /* */
                 }
                 else
                 {
