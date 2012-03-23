@@ -21,6 +21,6 @@ fi
 cat `find "${baseDir}/incomming/" | grep ${fileName}.packet | sort -V` > "${baseDir}/recieved/${fileName}"
 
 #remove all incomming files
-rm "${baseDir}/incomming/${fileName}*"
+rm ${baseDir}/incomming/${fileName}*
 
 exit 0;

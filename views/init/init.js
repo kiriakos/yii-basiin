@@ -127,32 +127,31 @@
     /**
      * Extend the basiin object with item accesible through tag
      */
-    var _extend = function(tag,item, overwrite)
+    var _extend = function(tag,item, object, overwrite)
     {
-        if (basiin[tag] === undefined || overwrite) basiin[tag] = item;
+        if (!object) object = basiin;
+        if (object[tag] === undefined || overwrite) object[tag] = item;
 
-        return basiin[tag] === item;
+        return object[tag] === item;
     }
-
-    
-    //var _event = _protoEvent;
     
     /**
-     *  Returns the value of window[variable], retaining the original variable
-     *  if retain is true. Default behavior is to unset the variable from the
+     *  Returns the value of window[variable], unsetting the variable from the
      *  window object.
+     *
+     *  Opt: revert the variable's value to revertValue instead of undefined
      */
-    var _pickUp = function(variable, revert, retain)
+    var _pickUp = function(variable, revertVar ,revertValue)
     {
-        if(revert === undefined) revert = null;
-
-        if(variable === undefined) _log('ERROR: No variable name given! Something went wrong!')
+        if(variable === undefined) return _log('ERROR: No variable name given! Something went wrong!')
 
         result = window[variable];
-        if(!retain) window[variable] = revert;
-
+        if (revertVar) window[variable] = revertValue;
+        else window[variable] = undefined
+        
         return result;
     }
+    
     /***************************************************************************
      * Public interface
      **************************************************************************/

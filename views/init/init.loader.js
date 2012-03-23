@@ -159,7 +159,7 @@ var _loader = (function(){
         var file = false;
         var transfer = false;
         _log("processing queues")
-        while( _loader.hasBandwidth() && (file = _getFile({'queued':true}))){
+        while( _loader.hasBandwidth() && (file = _getFile({'isQueued':true}))){
             file.install();
         }
         while( _loader.hasBandwidth() &&

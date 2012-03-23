@@ -173,6 +173,7 @@ class TransferController extends Controller
                         'packets'=>$transfer->pieces->getMissingPieces($packetCount),
                     );
                 }
+                
                 else
                 {
                     $basedir = Yii::getPathOfAlias('basiin');

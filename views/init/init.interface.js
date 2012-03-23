@@ -115,8 +115,8 @@
         intrfc.bw= function (){
             return _loader.hasBandwidth();
         };
-        intrfc.x= function (tag, item){
-            _extend(tag,item, false);
+        intrfc.x= function (tag, item, object){
+            _extend(tag, item, object, false);
         }
 
     }

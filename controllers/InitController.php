@@ -46,9 +46,9 @@ class InitController extends Controller
                 ),
                 'initFiles'=>array(
                     array(
-                        'tag'=>'jQuery',
-                        'file'=>'jquery-1.7.1.min.js',
-                        'onLoad'=>"js:function(){ basiin.jQuery = jQuery.noConflict(true);}",
+                        'packageName'=>'jQuery',
+                        'fileName'=>'jquery-1.7.1.min.js',
+                        'onAfterLoad'=>"js:function(){ basiin.jQuery = jQuery.noConflict(true);}",
                        // 'onLoad'=>"js:function(){".$transaction->id.".jQuery = jQuery.noConflict(true);}",
                 )),
                 'events'=>array(
