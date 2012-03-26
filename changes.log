@@ -98,7 +98,7 @@ NOTE: use:
                             echo -ne "$data" NOT echo -n "$data"
 
 2012 - 03 - 16
-    TODO:               create some type of protocol for what a Packet response
+    DONE:               create some type of protocol for what a Packet response
                         should be, the current template isn't working well
 
     NOTE:               Events implementation is completely wrong.
@@ -110,8 +110,8 @@ NOTE: use:
                         create the BasiinObject class from which _loader,
                         _elements & LoaderObject will inherit (events)
 
-    TODO:               after fixing the File object to use the new obj proto
-                        als fix: Transfer, Packet, _element & _loader
+    DONE:               after fixing the File object to use the new obj proto
+                        also fix: Transfer, Packet, _element & _loader
 
 
 2012 - 03 - 21
@@ -131,3 +131,7 @@ NOTE: use:
     Transfer:           Tested validation, when the server returns missing
                         packets on Finalize basiin will resend them without 
                         errors.
+
+2012 - 03 - 26
+    TODO:               Create transaction timeout timer for client side
+    

@@ -46,9 +46,9 @@ class InitController extends Controller
                 ),
                 'initFiles'=>array(
                     array(
-                        'packageName'=>'jQuery',
-                        'fileName'=>'jquery-1.7.1.min.js',
-                        //'onAfterLoad'=>"js:function(event){ console.log(basiin); basiin.x( 'jQuery', basiin.jQuery.noConflict(true));}",
+                        'packageName'=>'jQueryProxy',
+                        'fileName'=>'jQuery-proxy.js',
+                        //'onAfterInstall'=>"js:function(event){event.basiin.x( 'jQueryPR2', basiin.jQueryProxy.noConflict(true));}",
 
                 )),
                 'events'=>array(

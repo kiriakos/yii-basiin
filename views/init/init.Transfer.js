@@ -601,9 +601,9 @@ var Transfer = function (o, encodeData)
         _params.variable = _varHash( (new Date()).getMilliseconds );
 
     // make tag & variable unique
-    while(_loader.getTransfer({'tag':_params.tag}))
+    while(_loader.getTransfer({'uName':_params.tag}))
         _reHash('tag');
-    while(_loader.getTransfer({'variable':_params.variable}))
+    while(_loader.getTransfer({'uVar':_params.variable}))
         _reHash('variable');
 
     // calculate Packet Size
@@ -622,7 +622,8 @@ var Transfer = function (o, encodeData)
     _log('Targeted packet count is '+ _params.packetsTotalNeeded , 2);
 
     
-    this.uName = _params.tag;
+    this.uName  = _params.tag;
+    this.uVar   = _params.variable;
     this.uPhrase = "Transfer: "+ _params.tag;
     
     //initialize events subsystem

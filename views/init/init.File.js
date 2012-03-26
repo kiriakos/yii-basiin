@@ -89,31 +89,33 @@ function File(o)
      */
     function _standardInstall()
     {
-        _log("Performing standard install of package "+ _package.packageName, 4);
-        that.event('beforeInstall');
+        var result = true;
+        
+        _log("Performing standard install of package "+ _params.packageName, 4);
+        result = result && (that.event('beforeInstall') !== false);
 
-        if (_package.install) return _package.install();
-        else //do default install
+        if (_package.install && result) 
+            result = result && (_package.install() !== false);
+        
+        else if (result)//do default install
         {
             var extObj
             if (_package.extendPackage) extObj = _getPackageRefference(_package.extendPackage)
             else extObj = basiin;
 
             if (extObj)
-                return _extend(_params.packageName, new _package.payload(), extObj, _params.forceInstall);
-
-            return false;
+                result = result && _extend(_params.packageName, new _package.payload(), extObj, _params.forceInstall);
         }
 
         //AfterInstall isn't fired if install fails
-        that.event('afterInstall');
+        result = result && (that.event('afterInstall') !== false);
+        return result;
     }
 
     function _getPackageRefference(pkgString)
     {
 
         var pkgArr = pkgString.split(".");
-        if(pkgArr[0]==='basiin') pkgArr = pkgArr.slice(1)
         var ref = basiin;
 
         for (var i=0; i<pkgArr.length;i++)

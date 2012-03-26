@@ -58,7 +58,10 @@
         return this;
     };
 
-
+    /**
+     *  Extender
+     */
+    intrfc.x= _extend
 
     /********************************** debug *********************************/
     
@@ -115,7 +118,6 @@
         intrfc.bw= function (){
             return _loader.hasBandwidth();
         };
-        intrfc.x= _extend
 
     }
     
