@@ -96,16 +96,33 @@ function File(o)
         else //do default install
         {
             var extObj
-            if (_package.extendPackage)
-                extObj = _getPackageRefference(_package.extendPackage)
-            else
-                extObj = basiin;
+            if (_package.extendPackage) extObj = _getPackageRefference(_package.extendPackage)
+            else extObj = basiin;
 
-            return _extend(_params.packageName, new _package.payload(), extObj, _params.forceInstall);
+            if (extObj)
+                return _extend(_params.packageName, new _package.payload(), extObj, _params.forceInstall);
+
+            return false;
         }
 
+        //AfterInstall isn't fired if install fails
         that.event('afterInstall');
+    }
 
+    function _getPackageRefference(pkgString)
+    {
+
+        var pkgArr = pkgString.split(".");
+        if(pkgArr[0]==='basiin') pkgArr = pkgArr.slice(1)
+        var ref = basiin;
+
+        for (var i=0; i<pkgArr.length;i++)
+            if(ref[pkgArr[i]])
+                ref = ref[pkgArr[i]]
+            else
+                return false;
+            
+        return ref;
     }
 
     function _dependenciesInstalled()

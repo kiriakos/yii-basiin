@@ -114,6 +114,7 @@ function BasiinObjectPrototype () {
                     'name':name,
                     'caller':_callerId,
                     'object':this,
+                    'basiin':basiin, //allow alien scopes access to basiin
                     'proxy': _proxy
                 }
 
