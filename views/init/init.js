@@ -131,6 +131,8 @@
     {
         if (!object) object = basiin;
         if (object[tag] === undefined || overwrite) object[tag] = item;
+        else
+            _log("Extension:"+ tag+ " was skipped because it already exist or because `overwrite' is false")
 
         return object[tag] === item;
     }
@@ -141,13 +143,12 @@
      *
      *  Opt: revert the variable's value to revertValue instead of undefined
      */
-    var _pickUp = function(variable, revertVar ,revertValue)
+    var _pickUp = function(variable, revertValue)
     {
         if(variable === undefined) return _log('ERROR: No variable name given! Something went wrong!')
 
         result = window[variable];
-        if (revertVar) window[variable] = revertValue;
-        else window[variable] = undefined
+        window[variable] = revertValue;
         
         return result;
     }

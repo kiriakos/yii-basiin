@@ -48,8 +48,8 @@ class InitController extends Controller
                     array(
                         'packageName'=>'jQuery',
                         'fileName'=>'jquery-1.7.1.min.js',
-                        'onAfterLoad'=>"js:function(){ basiin.jQuery = jQuery.noConflict(true);}",
-                       // 'onLoad'=>"js:function(){".$transaction->id.".jQuery = jQuery.noConflict(true);}",
+                        //'onAfterLoad'=>"js:function(event){ console.log(basiin); basiin.x( 'jQuery', basiin.jQuery.noConflict(true));}",
+
                 )),
                 'events'=>array(
                          'onAfterInit'=>array('', $action),

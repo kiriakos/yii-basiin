@@ -45,11 +45,11 @@ var _loader = (function(){
      */
     function _install(fileOptions)
     {
-        _log( 'installing: '+fileOptions.tag );
+        _log( 'installing: '+fileOptions.packageName, 2 );
         // create a script tag with the route request to the file
         // the script tag gets an onLoad(this.loader.) hook)
         var file = new File (fileOptions);
-        console.log(file);
+        _assets.files.push(file);
         file.install();
         
         return file;

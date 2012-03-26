@@ -12,8 +12,7 @@
 function BasiinObjectPrototype () {
 
     /*************************** Hidden Properties ****************************/
-    bop = this;
-
+    var bop = this;
     /*********************** Utils ******************************/
     /**
      *  Uppercase the first char of str
@@ -30,20 +29,23 @@ function BasiinObjectPrototype () {
      */
     this.addEvents = function (object)
     {
-        return new _constructEventSystem(object) ;
+        return new _constructEventSystem(object, this) ;
     }
 
     /**
      * Constructor for the event function object
      * 
      */
-    function _constructEventSystem(eventsObject){
+    function _constructEventSystem(eventsObject, parent){
 
         var _events =[]
-
+        var _parent = parent;
+        
         var _callerId = "undefined caller Obj";
-        if (typeof this.uName=== 'string')
-            _callerId = this.uName
+        if (typeof parent.uPhrase=== 'string')
+            _callerId = parent.uPhrase
+        else if (typeof parent.uPhrase=== 'function')
+            _callerId = parent.uPhrase()
 
         function _raise (fn, event)
         {
@@ -58,21 +60,38 @@ function BasiinObjectPrototype () {
 
             _log( 'event '+ title );
 
-            var result;
-            if (typeof fn === 'function') result = fn(event);
-            else if (typeof fn === 'string')
-            {
-                if ( event.object && event.object["fn"] &&
-                        typeof event.object["fn"] === 'function')
-                    result = event.object[fn](event)
-                else
-                    try{result = eval(fn);}
-                    catch(e){result = false;}
-
-            }
-            else result = false;
+            var result = _execfn(fn,event);
+            
 
             return result;
+        }
+
+        /**
+         *  returns the value of the event computation or undefined if no
+         *  computation happened. returns false if an error ocured
+         */
+        function _execfn(fn, event){
+            try{
+                if (typeof fn === 'function')
+                    return fn(event);
+                else if (typeof fn === 'string')
+                {
+                    if ( event.object && event.object["fn"] &&
+                            typeof event.object["fn"] === 'function')
+                        return event.object[fn](event);
+                    else
+                        return eval(fn);
+                }
+            }catch(e){
+                return false;
+            }
+            
+            return undefined;
+        }
+
+        function _proxy(fn, args)
+        {
+            return eval("("+ fn+ ")")(args);
         }
 
         /**
@@ -82,7 +101,7 @@ function BasiinObjectPrototype () {
          *
          * Returns either the return value of the event's function or undefined
          * if no function was defined or false if something went wrong
-         *
+         * this is being executed in the parent's scope
          */
         function event (name, metadata){
             
@@ -94,7 +113,8 @@ function BasiinObjectPrototype () {
                     'meta':metadata,
                     'name':name,
                     'caller':_callerId,
-                    'object':this
+                    'object':this,
+                    'proxy': _proxy
                 }
 
                 return _raise(_events['on'+name], event)

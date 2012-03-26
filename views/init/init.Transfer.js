@@ -622,7 +622,9 @@ var Transfer = function (o, encodeData)
     _log('Targeted packet count is '+ _params.packetsTotalNeeded , 2);
 
     
-    this.uName = "Transfer: "+ _params.tag;
+    this.uName = _params.tag;
+    this.uPhrase = "Transfer: "+ _params.tag;
+    
     //initialize events subsystem
     this.event = this.addEvents(_params);
 

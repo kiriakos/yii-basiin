@@ -6,11 +6,17 @@
 
 var $__packageSafeName = {
 
-    requires: { //packages that are required for this package to be installed
+    dependencies: [ //packages that are required for this package to be installed
                 //only add top lvl packages here eg
-       "$packageSafeName":'$packageFilePath', //where file path is relative to Basiin::packagePath
-       'jQuery':'jquery-1.7.1.min.js'
-    },
+        {
+           packageName: "$packageSafeName",
+            fileName:'$packageFilePath'
+        }, //where file path is relative to Basiin::packagePath
+        {
+            packageName:'jQuery',
+            fileName:'jquery-1.7.1.min.js'
+        }
+    ],
 
     payload:function(basiin){
         // the default behavior (when install is undefined) is to instantiate

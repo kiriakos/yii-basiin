@@ -67,7 +67,8 @@ function Packet (url, identity, options)
     this.getIdentity = function (){return identity;}
     this.getUrl = function(){return url}
 
-    this.uName = "Packet: "+ this.getPacketName();
+    this.uName      = this.getPacketName();
+    this.uPhrase    = "Packet: "+ this.getPacketName();
     
 
     this.fail = _failize;
