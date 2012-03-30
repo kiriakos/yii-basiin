@@ -134,4 +134,13 @@ NOTE: use:
 
 2012 - 03 - 26
     TODO:               Create transaction timeout timer for client side
-    
+    TODO:               Make the event system events appendable, either via
+                        making the specific events arrays of functions or via
+                        wrapping of the previous function on the appended one
+
+2012 - 03 - 29
+    Bassin.php:         Added Icon and script(file) folders
+    BTransaction:       Moved js:_transaction.server in init.js to php side
+                        now _transaction.server is populated by 
+                        BTransaction->getServerPaths().
+

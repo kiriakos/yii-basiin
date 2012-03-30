@@ -23,6 +23,7 @@
      */
     function _varHash (str)
     {
+        if (!str)str= (new Date).getTime().toString();
         var hash = _hash(str);
         // if hash starts with a number add the first alpha char
         if (hash.match(/^[0-9]/)) hash = hash.match(/[a-zA-Z]/)+hash.match(/.{39}/);
@@ -30,23 +31,16 @@
         return hash;
     }
 
-    var basiin = null; //deprecated?
+    var basiin = null;
     var debug =  $debug;
-    var dbglvl = $debuglvl; //higher == more verbose 0 == invalid 5 == max
+    var dbglvl = $debuglvl; //higher == more verbose min:1 max:5
     var _initialized = false;
     var _transaction = {
         'id': "$transaction__id" , 'transactions': $transactions,
         'idHash':(function(){return _varHash("$transaction__id")})(),
         'events': $events,
 
-        'server': {
-            'location': "$homeDomain",
-            'domain': "$homeDomain",
-            'basiin': "$basiinPath",
-            'file': "$filePath",
-            'tell': "$transaction__defaultPath", //where data goes when path not set
-            'ack' : "basiin/ack"
-        },
+        'server': $transaction__serverPaths,
         'maxTransfers': $transaction__maxTransfers, // server transfer limit
         'maxElements': $transaction__maxElements, //browser load limit
         'maxTransferElements': $transaction__maxTransferElements, //when atomic writes get sorted out you will be able to increase this beyond 1

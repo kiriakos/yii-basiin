@@ -36,8 +36,11 @@ class Basiin{
 
     //mostly a js variable set to false on production
     const DEBUG = true;
-    const DEBUGLVL = 4;
+    const DEBUGLVL = 4; //min:1 max:5
 
+    //directories:
+    const ScriptDirectory = 'scripts';
+    const IconDirectory = 'images/system/basiin';
     
     /**************************************************************************
      ****************************** TRANSFERS *********************************
@@ -267,7 +270,11 @@ class Basiin{
      * @return mixed
      */
     public static function findViewFile($controller, $file, $fail = null){
+
         $absFile = $controller->getViewPath().'/'.$file;
+//        $ars = realpath($absFile);
+//        var_dump($absFile);
+//        die(var_dump($ars));
         if (!file_exists($absFile)){ //if the passed filename isn;t valid
             if (file_exists($absFile.'.min.js')){ //prioritize min files
                 $absFile = $absFile.'.min.js';
@@ -282,6 +289,11 @@ class Basiin{
         }
 
         return $absFile;
+    }
+
+    public static function render($controller, $data = NULL, $returnOutput = FALSE, $stopOnError = FALSE)
+    {
+        self::renderFile('../transfer/packet.js', $controller, $data, $returnOutput, $stopOnError);
     }
 
     /**

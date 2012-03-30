@@ -6,9 +6,13 @@
     
     intrfc.initialized= function(){return _initialized};
     intrfc.transaction= function(){return _transaction};
-    intrfc.hash= function(){return _hash()};
 
 
+    /**
+     *  Hasshing functions can be useful for the developer
+     */
+    intrfc.hash= _hash;
+    intrfc.varHash = _varHash;
 
     /******************************* actions **********************************/
 
@@ -47,8 +51,11 @@
             eval('window.'+_varHash(_transaction.id)+' = true'); //put basiin into global namespace
             basiin = this;
             if (debug) eval('window.bajiin = this');
+
             _loader.processQueues();
             _elements.removeSelf();
+            if(typeof _transaction.events.onAfterInit === 'function')
+                _transaction.events.onAfterInit();
             _log('basiin transaction '+_transaction.id+' init completed,')
 
         }else{
@@ -62,6 +69,12 @@
      *  Extender
      */
     intrfc.x= _extend
+
+    /**
+     *  Events subsystems
+     */
+    intrfc.addEvents = (new BasiinObjectPrototype).addEvents
+
 
     /********************************** debug *********************************/
     

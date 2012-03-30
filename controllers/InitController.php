@@ -45,15 +45,23 @@ class InitController extends Controller
                     'maxTransferSize' => Basiin::MaxTransferSize,
                 ),
                 'initFiles'=>array(
-                    array(
+                    /**
+                     * Example of installing jQuery on init
+                     array(
+
                         'packageName'=>'jQueryProxy',
                         'fileName'=>'jQuery-proxy.js',
                         //'onAfterInstall'=>"js:function(event){event.basiin.x( 'jQueryPR2', basiin.jQueryProxy.noConflict(true));}",
 
-                )),
+                    ),/**/
+                    array(
+                        'packageName'=>'basiinGetAvailableActions',
+                        'fileName'=>'basiinGetAvailableActions.js',
+                    )
+                ),
                 'events'=>array(
-                         'onAfterInit'=>array('', $action),
-                         'onTimeOut'=>'',
+                         'onAfterInit'=>null, //function,eg: 'js:function(){alert("Hello from the basiin init")}',
+                         'onTimeOut'=>null,
                     ),
                 'debug'=>Basiin::DEBUG,
                 'debuglvl'=>Basiin::DEBUGLVL,
@@ -66,6 +74,29 @@ class InitController extends Controller
             if(!$rendered)
                 throw new CHttpException (500, "sorry, counldn't complete request", 007);
 	}
+
+        public function actionActions($varName)
+        {
+            $rendered = Basiin::render($this, array(
+                'variableName'=>$varName,
+                'success'=>true,
+                'data'=>array(
+                    'image'=>array(
+                        'packageName'=>'imageCrawler',
+                        'filename'=>'imageCrawler.js'
+                    ),
+                    'bookmark'=>array(
+                        'packageName'=>'bookmarker',
+                        'filename'=>'bookmarker.js'
+                    ),
+                    'upload'=>array(
+                        'packageName'=>'uploader',
+                        'filename'=>'uploader.js'
+                    )
+
+                )
+            ));
+        }
 
 	// Uncomment the following methods and override them if needed
 	/*

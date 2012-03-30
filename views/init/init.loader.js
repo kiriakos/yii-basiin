@@ -14,10 +14,13 @@ var _loader = (function(){
 
             // arr:['route', 'article', 54 ] => str:"/route/article/54"
             for (var i=0; i<arr.length; i++){
+                url += '/';
                 if (arr[i] in _transaction.server)
-                    url += '/' +_transaction.server[arr[i]];
+                    url += _transaction.server[arr[i]];
+                else if (arr[i]+'Path' in _transaction.server)
+                    url += _transaction.server[arr[i]+'Path'];
                 else
-                    url += '/' + arr[i]
+                    url += arr[i]
             }
 
             return url;

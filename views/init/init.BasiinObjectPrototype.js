@@ -50,15 +50,16 @@ function BasiinObjectPrototype () {
         function _raise (fn, event)
         {
             var title='';
+            title+=(typeof event === 'object' && event.caller)?
+                                            event.caller+ ' fired ':'';
             title+= (typeof event === 'object' && event.name)?
                                             event.name:'undefined event name';
 
-            title+=(typeof event === 'object' && event.caller)?
-                                            " called from "+ event.caller:'';
+            
 
             if (typeof event === 'object' && event.meta) title += meta
 
-            _log( 'event '+ title );
+            _log( title );
 
             var result = _execfn(fn,event);
             
@@ -122,7 +123,7 @@ function BasiinObjectPrototype () {
             }
 
             //if event doesn't exist
-            _log('event on'+name+ ' fired but didn\'t exist', 4);
+            _log( _callerId+ ' fired on'+name+ '. No hook!', 4);
             return undefined; //undefined events return undefined in stead of false
         }
 

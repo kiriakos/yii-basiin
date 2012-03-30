@@ -271,4 +271,23 @@ class BTransaction extends EBasiinActiveRecord
          */
         public function getTTL(){ return Basiin::TransactionTTL; }
         public function getTransferTTL(){ return Basiin::TransferTTL; }
+        public function getServerPaths(){
+            $paths = array(
+                'location'=> Yii::app()->request->hostInfo,
+
+                'iconPath'=> Basiin::IconDirectory,
+                'filePath'=> Basiin::ScriptDirectory,
+                
+                'domain'=> Yii::app()->request->hostInfo,
+                'basiin'=> "basiin",//?
+                
+                //where data goes when path not set
+                'tell'=> $this->getDefaultPath(),
+
+                //acknowledge/ping/conection debug
+                'ack'=> "basiin/ack",
+
+            );
+            return $paths;
+        }
 }

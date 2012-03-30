@@ -1,4 +1,5 @@
 /**
+ *  Requires: url, identity, options.variable
  *  options:
  *      onLoad
  *      onError

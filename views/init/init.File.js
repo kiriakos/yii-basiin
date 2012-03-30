@@ -80,7 +80,8 @@ function File(o)
      */
     function _isStandardPackage()
     {   //true if _package is trueish and has either payload or install
-        return ( _package && (_package.payload || _package.install));
+        var result = (( _package && (_package.payload || _package.install)) !== undefined)
+        return result;
     }
 
     /**
@@ -92,23 +93,31 @@ function File(o)
         var result = true;
         
         _log("Performing standard install of package "+ _params.packageName, 4);
+        
         result = result && (that.event('beforeInstall') !== false);
 
-        if (_package.install && result) 
-            result = result && (_package.install() !== false);
+        if (_package.install && result) // function install
+            result = result && (_package.install(basiin) !== false);
         
-        else if (result)//do default install
+        else if (result) // payload instantiation install
         {
             var extObj
             if (_package.extendPackage) extObj = _getPackageRefference(_package.extendPackage)
             else extObj = basiin;
 
             if (extObj)
-                result = result && _extend(_params.packageName, new _package.payload(), extObj, _params.forceInstall);
+                result = result && _extend(_params.packageName, new _package.payload(basiin),
+                                            extObj, _params.forceInstall);
         }
 
+
+        if(!result) _log("OMG OMG OMG"+ _params.packageName + 'didnt install properly!')
+        else _log('package: '+ _params.packageName+ "installed successfully")
+
         //AfterInstall isn't fired if install fails
-        result = result && (that.event('afterInstall') !== false);
+        if (result)
+            result = result && (that.event('afterInstall') !== false);
+        
         return result;
     }
 
@@ -152,12 +161,18 @@ function File(o)
                         _preInstall();
                         return true;
                     }
-            if(!_loader.getFile({'uName':pkg.packageName})) //only install files that aren't installed
-                _loader.install( pkg )
-                    // all packages being installed will call this obj's _preInstall
-                // when the last package gets successsfully installed _preInstall
-                // will finaly install the package
 
+            // All packages being installed will call this obj's _preInstall
+            // when the last package gets successsfully installed _preInstall
+            // will finaly _standardInstall the package
+            // Only install files that aren't already installed
+            if(!_loader.getFile({'uName':pkg.packageName})) 
+                _loader.install( pkg );
+
+           //in case the required package is already installing set a timeout
+           else if (_loader.getFile({'uName':pkg.packageName, 'isInstalling':true}))
+               setTimeout(_preInstall, 1000);
+           
         }
     }
 
@@ -175,7 +190,7 @@ function File(o)
     {
         if(this.isQueued())
         {
-            _log("Starting install procedure of "+ _params.packageName, 3)
+            _log("Starting install procedure of "+ _params.packageName, 5)
             _params.element = _elements.script(
                                 ["file",_params.fileName],
                                 _fileOnLoadHook,
@@ -186,7 +201,7 @@ function File(o)
         }
         else return false;
     }
-    this.getPackage = function (){ return _package;}
+    this.getPackage = function (){return _package;}
     
     /*********************      Initialize     ****************************/
 
