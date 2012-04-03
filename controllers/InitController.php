@@ -75,23 +75,47 @@ class InitController extends Controller
                 throw new CHttpException (500, "sorry, counldn't complete request", 007);
 	}
 
+        /**
+         *  Retrieves a list of possible actions (packages to install)
+         *
+         * each action is actually a prettyfied pacakge daclaration.
+         * instead of only having packageName,fileName and onAfter onBefore
+         * events these objects also undestand:
+         *  packageTitle:       the prefered display name (required)
+         *  packageTooltip:     prefered a.title attribute (optional, default:pTitle)
+         *  packageDescription: additional info to what the package does
+         *  onClick:            function to execute before the install happens
+         *                      to actually perform the install this func must
+         *                      return boolean `true'. Any other value will
+         *                      cancel the install
+         *
+         * @param string $varName basiin response Variable name
+         */
         public function actionActions($varName)
         {
             $rendered = Basiin::render($this, array(
                 'variableName'=>$varName,
                 'success'=>true,
-                'data'=>array(
-                    'image'=>array(
+                'data'=>array( //array of action objects
+                    array(
                         'packageName'=>'imageCrawler',
-                        'filename'=>'imageCrawler.js'
+                        'packageTitle'=>'Image crawler',
+                        'packageTooltip'=>'Save and bookmark images',
+                        'fileName'=>'imageCrawler.js',
+                        'onAfterInstall'=>'event.basiin.imageCrawler.display()'
+                        
                     ),
-                    'bookmark'=>array(
+                    array(
                         'packageName'=>'bookmarker',
-                        'filename'=>'bookmarker.js'
+                        'fileName'=>'bookmarker.js',
+                        'onClick'=>'js:function(){alert("Not implemented for Demo")}'
                     ),
-                    'upload'=>array(
+                    array(
                         'packageName'=>'uploader',
-                        'filename'=>'uploader.js'
+                        'fileName'=>'uploader.js',
+                        'packageTooltip'=>'upload an arbitrary file',
+                        'packageDescription'=>'upload a file',
+                        'onClick'=>'js:function(){alert("Not implemented for Demo")}'
                     )
 
                 )

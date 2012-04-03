@@ -6,24 +6,30 @@ var _loader = (function(){
      *  Generate a url to the basiin server's domain based on a passed array
      *
      *  recognizes aliases that are properties of _transaction.server
+     *  arguments are either one array or a plain list of arguments.
+     *
      *  @return string
      */
-    function _createURL(arr)
-    {
-            var url = _transaction.server.location
+    function _createURL()
+    {   var arr
 
-            // arr:['route', 'article', 54 ] => str:"/route/article/54"
-            for (var i=0; i<arr.length; i++){
-                url += '/';
-                if (arr[i] in _transaction.server)
-                    url += _transaction.server[arr[i]];
-                else if (arr[i]+'Path' in _transaction.server)
-                    url += _transaction.server[arr[i]+'Path'];
-                else
-                    url += arr[i]
-            }
+        if(arguments.length === 1) arr=arguments[0]
+        else arr = arguments
 
-            return url;
+        var url = _transaction.server.location
+
+        // arr:['route', 'article', 54 ] => str:"/route/article/54"
+        for (var i=0; i<arr.length; i++){
+            url += '/';
+            if (arr[i] in _transaction.server)
+                url += _transaction.server[arr[i]];
+            else if (arr[i]+'Path' in _transaction.server)
+                url += _transaction.server[arr[i]+'Path'];
+            else
+                url += arr[i]
+        }
+
+        return url;
     }
 
     /**

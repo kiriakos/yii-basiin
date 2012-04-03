@@ -112,7 +112,7 @@ function File(o)
 
 
         if(!result) _log("OMG OMG OMG"+ _params.packageName + 'didnt install properly!')
-        else _log('package: '+ _params.packageName+ "installed successfully")
+        else _log('Package: '+ _params.packageName+ " installed successfully")
 
         //AfterInstall isn't fired if install fails
         if (result)

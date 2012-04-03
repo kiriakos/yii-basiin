@@ -33,10 +33,21 @@
         return tranfer;
     };
 
-    //install a file
-    intrfc.install= function(tag, file)
-    {   // wrapper of loader.install()
-        return this.loader.install({'tag':tag, 'file':file})
+    // wrapper of loader.install()
+    intrfc.install= function()
+    {
+        var map = {};
+        //take care of map submission
+        if(arguments.length==1){
+            map=arguments[0];
+            if(map.tag && !map.packageName) map.packageName=map.tag;
+            if(map.file && !map.fileName)map.fileName=map.file;
+        }else{
+            map.packageName = arguments[0]
+            map.fileName = arguments[1]
+        }
+
+        return _loader.install( map );
     };
 
     /**
@@ -68,13 +79,17 @@
     /**
      *  Extender
      */
-    intrfc.x= _extend
+    intrfc.x= _extend;
 
     /**
      *  Events subsystems
      */
-    intrfc.addEvents = (new BasiinObjectPrototype).addEvents
+    intrfc.addEvents = (new BasiinObjectPrototype).addEvents;
 
+    /**
+     *  URL generator
+     */
+    intrfc.createURL = _loader.createURL;
 
     /********************************** debug *********************************/
     
@@ -109,6 +124,7 @@
             },
 
             //verify file with "tag" was installed
+            //DEPRECATED!
             'confirmInstall': function(tag){//move file called tag obj from loading to loaded
                 return _loader.confirmInstall(tag);
             },
