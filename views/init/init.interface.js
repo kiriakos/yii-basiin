@@ -91,6 +91,9 @@
      */
     intrfc.createURL = _loader.createURL;
 
+    intrfc.uPhrase ="Basiin root interface"
+    intrfc.uName ="Basiin"
+
     /********************************** debug *********************************/
     
     if (debug)

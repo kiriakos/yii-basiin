@@ -143,7 +143,6 @@ class BTransfer extends EBasiinActiveRecord
      *****************************Model-events*********************************
      **************************************************************************/
 
-
         /**
          *  Prepare the transfer object for saving
          * @param CEvent $event
@@ -197,6 +196,42 @@ class BTransfer extends EBasiinActiveRecord
      ************************ Model-funcitonality *****************************
      **************************************************************************/
 
+
+        /**
+         *  Get an abs file Path to the received file
+         * @return FilePointer
+         */
+        public function getFilePath()
+        {
+            return $this->getFileDir(). DIRECTORY_SEPARATOR.
+                    $this->file_name;
+        }
+
+        /**
+         *  Delete the transfer's received file
+         * @return boolean
+         */
+        public function deleteFile()
+        {
+            return unlink($this->getFileDir(). DIRECTORY_SEPARATOR.
+                    $this->file_name);
+        }
+
+        /**
+         *  Absolute path to `received' directory
+         * @return string
+         */
+        public function getFileDir(){
+            return Yii::getPathOfAlias('basiin.recieved');
+        }
+
+        /**
+         *  Absolute path to `incomming' directory
+         * @return string
+         */
+        public function getIncommingFileDir(){
+            return Yii::getPathOfAlias('basiin.incomming');
+        }
 
         /**
          *  Flag, true if the Transaction has been accesed and should be saved

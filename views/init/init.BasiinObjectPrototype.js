@@ -27,9 +27,10 @@ function BasiinObjectPrototype () {
      * return an initialized event funcitonObject listening to all events
      * its parent object has (only the partens)
      */
-    this.addEvents = function (object)
+    this.addEvents = function (object, forceParrent)
     {
-        return new _constructEventSystem(object, this) ;
+        var that = (forceParrent)?forceParrent:this;
+        return new _constructEventSystem(object, that) ;
     }
 
     /**
@@ -40,7 +41,7 @@ function BasiinObjectPrototype () {
 
         var _events =[]
         var _parent = parent;
-        
+
         var _callerId = "undefined caller Obj";
         if (typeof parent.uPhrase=== 'string')
             _callerId = parent.uPhrase
@@ -59,7 +60,7 @@ function BasiinObjectPrototype () {
 
             if (typeof event === 'object' && event.meta) title += meta
 
-            _log( title );
+            _log( title , 3);
 
             var result = _execfn(fn,event);
             
@@ -84,6 +85,8 @@ function BasiinObjectPrototype () {
                         return eval(fn);
                 }
             }catch(e){
+                _log('event failed');
+                console.log(e);
                 return false;
             }
             

@@ -469,6 +469,10 @@ var Transfer = function (o, encodeData)
         return result;
     }
 
+    this.getServerSideId = function(){
+        return _params.serverSideId;
+    }
+
     this.eval = function(string){
         if (debug)
             return eval(string);

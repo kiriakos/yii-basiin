@@ -144,3 +144,5 @@ NOTE: use:
                         now _transaction.server is populated by 
                         BTransaction->getServerPaths().
 
+2012 - 04 - 03
+    TODO:               add a styles obj to gui that makes functions out of style data
