@@ -37,9 +37,11 @@ var $variable_name = { // eg: $transfer__variable_name Packet.options.variable
                                  // program.
 
     'events': {
-        'onPickUp': function(){},// to be called immediately after pickup
-        'onFail':   function(){},// to be called immediately after failize()
-        'onSuccess':function(){} // to be called immediately after finalize()
+        'onPickUp':       $onPickUp,    // fn to be called immediately after pickup
+        'onBeforeFail':   $onFail,      // fn to be called immediately before Packet.failize()
+        'onAfterFail':    $onFail,      // fn to be called immediately after Packet.failize()
+        'onBeforeSuccess':$onSuccess,   // fn to be called immediately Before Packet.finalize()
+        'onAfterSuccess': $onSuccess    // fn to be called immediately after Packet.finalize()
     }
 
 };

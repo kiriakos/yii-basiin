@@ -516,7 +516,9 @@ var Transfer = function (o, encodeData)
 
             /* event Hooks */
             'onBeforeComplete':null,
-            'onAfterComplete':null,
+            'onAfterComplete':null,//fired when the client side Transfer thinks it sent all packets
+            'onBeforeFinalize':null,
+            'onAfterFinalize':null,//The last event fired when the Transfer completes
             'onBeforePacketLoad':null,
             'onAfterPacketLoad':null,
             'onBeforePacketError':null,

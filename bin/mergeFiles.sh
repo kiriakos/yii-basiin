@@ -18,7 +18,7 @@ else
 fi
 
 #catenate the files together (sorted)
-cat `find "${baseDir}/incomming/" | grep ${fileName}.packet | sort -V` > "${baseDir}/recieved/${fileName}"
+cat `find "${baseDir}/incomming/" | grep ${fileName}.packet | sort -V` > "${baseDir}/received/${fileName}"
 
 #remove all incomming files
 rm ${baseDir}/incomming/${fileName}*

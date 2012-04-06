@@ -29,7 +29,7 @@
         _log('tell: creating assets',2)
 
         _log('tell: passing data off to loader.transfer()',2)
-        var tranfer = this.loader.transfer({'data': data});
+        var tranfer =  _loader.transfer({'data': data});
         return tranfer;
     };
 
@@ -60,6 +60,7 @@
             _log('basiin transaction '+_transaction.id+' initializing,')
             /* init tasks */
             eval('window.'+_varHash(_transaction.id)+' = true'); //put basiin into global namespace
+
             basiin = this;
             if (debug) eval('window.bajiin = this');
 

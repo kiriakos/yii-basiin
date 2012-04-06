@@ -178,6 +178,12 @@ class BTransfer extends EBasiinActiveRecord
             echo "obs transfer:".$this->id;
         }
 
+        //DOESNTWORK
+        public function onBeforeDelete($event) {
+            parent::onBeforeDelete($event);
+            $this->deleteFile();
+        }
+
         /**
          * HACK: called by BTransaction::onAfterSave  which is called manually
          */
@@ -211,10 +217,15 @@ class BTransfer extends EBasiinActiveRecord
          *  Delete the transfer's received file
          * @return boolean
          */
-        public function deleteFile()
+        private function deleteFile()
         {
             return unlink($this->getFileDir(). DIRECTORY_SEPARATOR.
                     $this->file_name);
+        }
+        
+        public function  delete() {
+            $this->deleteFile();
+            return parent::delete();
         }
 
         /**
@@ -222,7 +233,7 @@ class BTransfer extends EBasiinActiveRecord
          * @return string
          */
         public function getFileDir(){
-            return Yii::getPathOfAlias('basiin.recieved');
+            return Yii::getPathOfAlias('basiin.received');
         }
 
         /**

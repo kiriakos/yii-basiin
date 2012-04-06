@@ -8,7 +8,7 @@
  */
 class TransferController extends Controller
 {
-        public $defaultAction = 'recieve';
+        public $defaultAction = 'receive';
         public $layout='//layouts/selfRemove';
 
 
@@ -59,7 +59,7 @@ class TransferController extends Controller
         }
 
         /**
-         * Recieve a packet for an already announced transfer
+         * receive a packet for an already announced transfer
          *
          * @param integer $transactionId
          * @param integer $transferId       
@@ -122,7 +122,7 @@ class TransferController extends Controller
             {   
                 $vars['success']= true;
                 $vars['bytes']= $result;
-                $transfer->pieces->setRecieved ($packetIndex);
+                $transfer->pieces->setreceived ($packetIndex);
                 $transfer->piece_next++;
                 $transfer->access();
 
@@ -179,7 +179,7 @@ class TransferController extends Controller
                     $basedir = Yii::getPathOfAlias('basiin');
                     $cmd = Yii::getPathOfAlias('basiin.bin'). "/mergeFiles.sh ".
                             "'{$transfer->file_name}' '{$basedir}' 2>&1".
-                            " {$basedir}/data/mergeFiles.log &";
+                            " {$basedir}/bin/mergeFiles.log &";
                     $vars["output"] = array( $cmd );
                     exec($cmd, $vars["output"], $vars['data']);
                 }
@@ -194,7 +194,7 @@ class TransferController extends Controller
 
 
          /**
-          * Debuging function retuns the length of $data recieved in var ackno..
+          * Debuging function retuns the length of $data received in var ackno..
           * @param string $data
           */
          public function actionAcknowledge($data = "")

@@ -3,13 +3,36 @@
 /**
  * Controller for the basiin initialization step
  *
- * Usage: host.domain/basiin/init/"nextAction"
+ * Usage: <host.domain>/basiin/image/<action>/<d1>?/<d2>?
  * 
  */
 class ImageController extends Controller
 {
         public $defaultAction = 'image';
         public $layout='//layouts/selfRemove';
+
+//        /**
+//	 * @return array action filters
+//	 */
+//	public function filters()
+//	{
+//		return array(
+//			'accessControl', // perform access control for CRUD operations
+//		);
+//	}
+//
+//        public function accessRules()
+//	{
+//            return array(
+//                array('allow', // allow admin user to perform 'admin' and 'delete' actions
+//                        'users'=>array('kappa@kindstudios.gr'),
+//                ),
+//                array('allow',  // allow all users to perform 'index' and 'view' actions
+//                        'actions'=>array('uploaded'),
+//                        'users'=>array('@'),
+//                )
+//            );
+//	}
         
         /**
          * A request to initialize a Basiin transaction
@@ -18,53 +41,52 @@ class ImageController extends Controller
          * 1) initializes the transaction (on BMlet press = 1 transaction)
          * 2) randomizes the function values and stores the aliases in the
          *    session
-         * 
          *
          * @param string $nextAction
          */
-        public function actionUploaded($transactionId,$transferId = null, $data1=null, $data2=null)
+        public function actionUploaded($transactionId, $transferId , $data1=null, $data2=null)
 	{
             $transactionId = (integer) $transactionId;
             $transferId = (integer) $transferId;
-            $dlOnly = ((int) $data1===1)?true:false;
+            //die(var_dump(rawurldecode($data1)));
+            $data = json_decode(rawurldecode($data1));
             
             //get transaction & transfer
             $transaction = Basiin::getTransaction($transactionId);
             $transfer = $transaction->getTransfer($transferId);
-
+            
             //if all correct get file
             if (!$transaction || !$transfer)
                 throw  new CHttpException (400, "sorry, either transaction or transfer don't exist anymore", 007);
             else
                 $file = file_get_contents ($transfer->getFilePath());
 
-            $coma = strpos($file,',');         
-            $meta = substr($file, 0, $coma);
-            $data = substr($file, $coma+1);
+            $imcoma = strpos($file,',');
+            $immeta = substr($file, 0, $imcoma);
+            $imdata = substr($file, $imcoma+1);
 
-            $meta = explode(';', $meta);
-            $meta[0] = (explode(':', $meta[0]));
-            $meta[0] = $meta[0][count($meta[0])-1];
-            $fileMime = $meta[0]; //eg: "image/png"
+            $immeta = explode(';', $immeta);
+            $immeta[0] = (explode(':', $immeta[0]));
+            $immeta[0] = $immeta[0][count($immeta[0])-1];
+            $fileMime = $immeta[0]; //eg: "image/png"
             $fileType = explode('/', $fileMime);
             $fileType = $fileType[count($fileType)-1];
-            if(count($meta) == 3) {
-                $charSet = explode('=', $meta[1]);
+            if(count($immeta) == 3) {
+                $charSet = explode('=', $immeta[1]);
                 if(count($charSet) == 2) $charSet = $charSet[1];
             }else
                 $charSet = 'utf-8';
             
-            $b64enc = ( strtolower($meta[count($meta)-1]) == 'base64');
+            $b64enc = ( strtolower($immeta[count($immeta)-1]) == 'base64');
 
             //manage js.toDataURL() data
             if($b64enc)
-                $data = base64_decode($data);
+                $imdata = base64_decode($imdata);
             
             //create image object
-            $im = imagecreatefromstring($data);
+            $im = imagecreatefromstring($imdata);
 
-//            die(var_dump((($data2)?$data2:$transfer->file_name)));
-            if($dlOnly)
+            if($data->dlOnly)
             {
                 if ($im !== false) {
                     header('Content-Description: File Transfer');
@@ -93,15 +115,37 @@ class ImageController extends Controller
                 }else
                     throw  new CHttpException (500, "GD image creation from string failed", 007);
             }
-            else
+            else // this code is specific to kindstudios.gr, you have to complete it for your own projects //
             {
                 //if upload:
-                // create Image & write image object to /images/originals
-                // redirect to Image/view view
+                $image = new Image("basiinCreate");
+                $image->title = $data->title;
+                //CAUTION canvas submitted data is always png data
+                $mas=array();
+                preg_match("/(^.*\.)([\w]+$)/",$data->filename, $mas);
+                var_dump($mas[1]);
+                $mimeSplode = explode('/', $fileMime);
+                $image->filename = $mas[1].'.'. $mimeSplode[1];
+                $image->tags = $data->tags;
+                $image->GDImageData = $im;
 
+                
+
+                // create Image & write image object to /images/originals
+                $saved = $image->saveUploadedImage($fileMime);
+                //die(var_dump($image->validate()));
+
+                if ($saved && $image->save()){
+                    $transfer->delete();
+                    // redirect to Image/view view
+                    $this->redirect('/image/update/'.$image->id);
+                    Yii::app()->user->setFlash('success', "Image added, return to <a href=\"$data->flashRewindUrl\">$data->flashRewindTitle</a>");
+                }
+                else
+                    throw new CHttpException ( 500, "Image save failed", 007);
             }
 
-            //end
+            
 	}
 
 	// Uncomment the following methods and override them if needed

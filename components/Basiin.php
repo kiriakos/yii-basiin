@@ -35,7 +35,7 @@ class Basiin{
     const IdDigits = 9; //used to calculate Packet sizes
 
     //mostly a js variable set to false on production
-    const DEBUG = true;
+    const DEBUG = false;
     const DEBUGLVL = 4; //min:1 max:5
 
     //directories:

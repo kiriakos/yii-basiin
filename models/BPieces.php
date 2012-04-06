@@ -104,22 +104,22 @@ class BPieces extends EBasiinActiveRecord
 
 
         /**
-         *  Returns true if the piece at $index has been recieved (==1)
+         *  Returns true if the piece at $index has been received (==1)
          * @param integer $index
          * @return boolean
          */
-        public function getRecieved($index){
+        public function getReceived($index){
             return ( substr($this->pieces, $index -1 , 1) == 1 );
         }
 
         /**
-         *  Sets the piece flag of piece $index to 1 (recieved) returns the pieces string
+         *  Sets the piece flag of piece $index to 1 (received) returns the pieces string
          *
          * Will pad the pieces string if a too big index is given
          * @param integer $index
          * @return string 
          */
-        public function setRecieved($index){
+        public function setReceived($index){
 
             $this->accessed = true;
             $pieceCount = strlen($this->pieces);
@@ -138,9 +138,9 @@ class BPieces extends EBasiinActiveRecord
         }
 
         /**
-         *  Check if all teh pieces have been recieved
+         *  Check if all teh pieces have been received
          *
-         * Checks if all pieces have been recieved. The $finalPieces argument
+         * Checks if all pieces have been received. The $finalPieces argument
          * is there because Basiin can't know how many pieces the transfer will
          * need from the begining (since the user front end doesn't read the
          * transfer stream)
@@ -162,7 +162,7 @@ class BPieces extends EBasiinActiveRecord
         /**
          *  Get the missing piece indexes for $pieceCount pieces from $offset.
          *
-         * returns an array of pieces that haven't been recieved yet.
+         * returns an array of pieces that haven't been received yet.
          *
          * @param integer $pieceCount
          * @param integer $offset

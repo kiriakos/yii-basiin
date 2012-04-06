@@ -76,7 +76,7 @@ var _elements = (function(){
          * 
          */
         'remove': function(element){
-            _log( '"_element.remove" would be removing element: ' + element.getAttribute('src'))
+            _log( '"_element.remove" would be removing element: ' + element.getAttribute('src'),3 )
             if ( !debug ) {
                 element.parentNode.removeChild(element);
                 _elements.active--;

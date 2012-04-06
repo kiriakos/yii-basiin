@@ -73,7 +73,7 @@ function BasiinObjectPrototype () {
          *  computation happened. returns false if an error ocured
          */
         function _execfn(fn, event){
-            try{
+//            try{
                 if (typeof fn === 'function')
                     return fn(event);
                 else if (typeof fn === 'string')
@@ -84,11 +84,11 @@ function BasiinObjectPrototype () {
                     else
                         return eval(fn);
                 }
-            }catch(e){
-                _log('event failed');
-                console.log(e);
-                return false;
-            }
+//            }catch(e){
+//                _log('event failed');
+//                console.log(e);
+//                return false;
+//            }
             
             return undefined;
         }
