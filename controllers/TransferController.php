@@ -184,8 +184,6 @@ class TransferController extends Controller
                     exec($cmd, $vars["output"], $vars['data']);
                 }
 
-
-
                 $rendered = Basiin::renderFile('packet', $this, $vars);
                 
                 if(!$rendered)

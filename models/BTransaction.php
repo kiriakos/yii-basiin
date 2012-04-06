@@ -225,8 +225,19 @@ class BTransaction extends EBasiinActiveRecord
                     if ($transfer->id == $id) return $transfer->access($readonly);
 
             if ($halt)
-                    throw new CHttpException (400, "Sorry, the transfer you are trying to access doesn't exist anymore", 007);
+                    throw new CHttpException (400, "Sorry, the transfer ({$id}) you are trying to access doesn't exist anymore", 007);
 
+
+            return false;
+        }
+
+        public function getTransferData($id, $delete=false, $halt=false){
+            $tr = $this->getTransfer($id);
+            if($tr) {
+                $result = $tr->getFileData ();
+                if($delete) $tr->delete();
+                return $result;
+            }
 
             return false;
         }

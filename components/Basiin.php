@@ -18,7 +18,7 @@ class Basiin{
 
     //the total string length if a transfer exceeds this the transfer is
     //canceled and the data forgotten
-    const MaxTransferSize = 2000000; //2M bytes
+    const MaxTransferSize = 20000000; //20M bytes
     const MaxPieceSize = 100000; //100K bytes
     const MaxUrlLength = 4000; //4096 doesn't work on some apache configs, for 
                                //higher values you will need to recompile apache

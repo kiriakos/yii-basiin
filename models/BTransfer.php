@@ -181,7 +181,7 @@ class BTransfer extends EBasiinActiveRecord
         //DOESNTWORK
         public function onBeforeDelete($event) {
             parent::onBeforeDelete($event);
-            $this->deleteFile();
+            $this->deleteFiles();
         }
 
         /**
@@ -213,18 +213,36 @@ class BTransfer extends EBasiinActiveRecord
                     $this->file_name;
         }
 
+
+        /**
+         *  Get the data in the recieved file
+         * @return string
+         */
+        public function getFileData()
+        {
+            return file_get_contents ($this->getFilePath());
+        }
         /**
          *  Delete the transfer's received file
+         *
+         * TODO: test
+         * 
          * @return boolean
          */
-        private function deleteFile()
+        private function deleteFiles()
         {
-            return unlink($this->getFileDir(). DIRECTORY_SEPARATOR.
-                    $this->file_name);
+            $basedir = Yii::getPathOfAlias('basiin');
+            $cmd = Yii::getPathOfAlias('basiin.bin'). "/unlinkFiles.sh '{$this->file_name}' '{$basedir}'";
+            $out="";
+            $int=null;
+            exec($cmd,$out,$int);
+            return  $int;
+//            unlink($this->getFileDir(). DIRECTORY_SEPARATOR.
+//                    $this->file_name);
         }
         
         public function  delete() {
-            $this->deleteFile();
+            $this->deleteFiles();
             return parent::delete();
         }
 

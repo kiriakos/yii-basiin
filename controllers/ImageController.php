@@ -48,19 +48,23 @@ class ImageController extends Controller
 	{
             $transactionId = (integer) $transactionId;
             $transferId = (integer) $transferId;
-            //die(var_dump(rawurldecode($data1)));
-            $data = json_decode(rawurldecode($data1));
-            
-            //get transaction & transfer
+            $metaTransferId = (int) $data1;
+
             $transaction = Basiin::getTransaction($transactionId);
             $transfer = $transaction->getTransfer($transferId);
+
+            if($metaTransferId)
+                $metadata = json_decode($transaction->getTransferData ($metaTransferId, false,false));
+            else
+                $metadata = false;
             
             //if all correct get file
             if (!$transaction || !$transfer)
                 throw  new CHttpException (400, "sorry, either transaction or transfer don't exist anymore", 007);
             else
-                $file = file_get_contents ($transfer->getFilePath());
+                $file = $transfer->getFileData ();
 
+            
             $imcoma = strpos($file,',');
             $immeta = substr($file, 0, $imcoma);
             $imdata = substr($file, $imcoma+1);
@@ -86,7 +90,7 @@ class ImageController extends Controller
             //create image object
             $im = imagecreatefromstring($imdata);
 
-            if($data->dlOnly)
+            if($metadata && isset($metadata->dlOnly) && $metadata->dlOnly)
             {
                 if ($im !== false) {
                     header('Content-Description: File Transfer');
@@ -119,17 +123,23 @@ class ImageController extends Controller
             {
                 //if upload:
                 $image = new Image("basiinCreate");
-                $image->title = $data->title;
+                $image->title = $metadata->title;
                 //CAUTION canvas submitted data is always png data
                 $mas=array();
-                preg_match("/(^.*\.)([\w]+$)/",$data->filename, $mas);
-                var_dump($mas[1]);
+                preg_match("/^(?:[^\?]*\/)?([^\?]+)/",$metadata->filename, $mas);
+                
                 $mimeSplode = explode('/', $fileMime);
                 $image->filename = $mas[1].'.'. $mimeSplode[1];
-                $image->tags = $data->tags;
                 $image->GDImageData = $im;
+                if ($metadata){
+                    if( isset($metadata->description) )
+                            $image->addDescription ($metadata->description);
+                    if( isset($metadata->flashRewindUrl) && isset($metadata->flashRewindTitle) )
+                        Yii::app()->user->setFlash('success',
+                        "Image added, return to <a href=\"$metadata->flashRewindUrl\">$metadata->flashRewindTitle</a>");
+                    if( isset($metadata->tags))$image->tags = $metadata->tags;
 
-                
+                }
 
                 // create Image & write image object to /images/originals
                 $saved = $image->saveUploadedImage($fileMime);
@@ -137,12 +147,10 @@ class ImageController extends Controller
 
                 if ($saved && $image->save()){
                     $transfer->delete();
-                    // redirect to Image/view view
                     $this->redirect('/image/update/'.$image->id);
-                    Yii::app()->user->setFlash('success', "Image added, return to <a href=\"$data->flashRewindUrl\">$data->flashRewindTitle</a>");
                 }
                 else
-                    throw new CHttpException ( 500, "Image save failed", 007);
+                    throw new CHttpException ( 500, "Image save failed, sorry.", 007);
             }
 
             
