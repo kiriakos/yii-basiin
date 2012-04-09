@@ -98,6 +98,46 @@ class Basiin{
     }
 
     /**
+     *  Searches self::$transactions for a transfer with $id
+     *
+     * Will return transfer of $id if it belonags to the asking user's session
+     * Otherwise returns false or halts app execution via an CHttpException
+     *
+     * @param string $id
+     * @return mixed
+     */
+    public static function getTransfer($id, $halt = false, $readonly = false)
+    {
+        /* @var $transaction BTransaction */
+        foreach (self::$transactions as $transaction){
+            if (($tr = $transaction->getTransfer($id, $halt, $readonly)))
+                    return $tr;
+        }
+
+        if ($halt)
+            throw new CHttpException (400, "Sorry, the transfer you are trying to access
+                doesn't exist or belongs to someone's other user session", 007);
+
+        return false;
+    }
+
+    /**
+     *  Return the data of tranfer $id
+     *
+     * Returns a string representatino nof the data sent through a transfer.
+     * Will return data only if the Transfer belongs to the user's session
+     *
+     * @param string $id
+     * @param boolean $halt
+     * @return string
+     */
+    public static function getTransferData($id, $halt = false){
+
+        if (($tr =self::getTransfer($id, $halt, true)))
+                return $tr->getFileData();
+    }
+
+    /**
      * Generates a new BTransaction and saves it into session returning the instance
      * @return BTransaction
      */

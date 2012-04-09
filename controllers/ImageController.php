@@ -54,9 +54,11 @@ class ImageController extends Controller
             $transfer = $transaction->getTransfer($transferId);
 
             if($metaTransferId)
-                $metadata = json_decode($transaction->getTransferData ($metaTransferId, false,false));
+                $metadata = json_decode( Basiin::getTransferData($metaTransferId, false) );
             else
                 $metadata = false;
+
+            //die(var_dump($metadata));
             
             //if all correct get file
             if (!$transaction || !$transfer)
@@ -132,11 +134,20 @@ class ImageController extends Controller
                 $image->filename = $mas[1].'.'. $mimeSplode[1];
                 $image->GDImageData = $im;
                 if ($metadata){
+                    if (isset($metadata->flashRewindUrl)&&$metadata->description)
+                        $metadata->description.='\\n\\nsource: '.$metadata->flashRewindUrl;
+                    else if(isset($metadata->flashRewindUrl))
+                        $metadata->description ='source: '.$metadata->flashRewindUrl;
+                    
                     if( isset($metadata->description) )
-                            $image->addDescription ($metadata->description);
+                        $image->addDescription ($metadata->description);
+
                     if( isset($metadata->flashRewindUrl) && isset($metadata->flashRewindTitle) )
                         Yii::app()->user->setFlash('success',
-                        "Image added, return to <a href=\"$metadata->flashRewindUrl\">$metadata->flashRewindTitle</a>");
+                        "Image added, return to <a href=\"$metadata->flashRewindUrl\">$metadata->flashRewindTitle</a>",
+                                6);
+                    
+                    
                     if( isset($metadata->tags))$image->tags = $metadata->tags;
 
                 }

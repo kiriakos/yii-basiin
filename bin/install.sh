@@ -18,7 +18,9 @@ Gid=48 ##apache's group ID
 #clean
 rm -i $DIR/../data/* $DIR/../incomming/* $DIR/../received/*
 
-#mount
+
+#mount ramdisks (tempfss)
+echo "You need to be root to mount tempfs structures, please provide the root passordwd"
 su - -c "mount -t tmpfs -o size=$DBSize,uid=$Uid,gid=$Gid tmpfs $DIR/../data;
          mount -t tmpfs -o size=$StoreSize,uid=$Uid,gid=$Gid tmpfs $DIR/../incomming;
          mount -t tmpfs -o size=$StoreSize,uid=$Uid,gid=$Gid tmpfs $DIR/../received;"
