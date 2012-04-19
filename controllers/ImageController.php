@@ -10,29 +10,6 @@ class ImageController extends Controller
 {
         public $defaultAction = 'image';
         public $layout='//layouts/selfRemove';
-
-//        /**
-//	 * @return array action filters
-//	 */
-//	public function filters()
-//	{
-//		return array(
-//			'accessControl', // perform access control for CRUD operations
-//		);
-//	}
-//
-//        public function accessRules()
-//	{
-//            return array(
-//                array('allow', // allow admin user to perform 'admin' and 'delete' actions
-//                        'users'=>array('kappa@kindstudios.gr'),
-//                ),
-//                array('allow',  // allow all users to perform 'index' and 'view' actions
-//                        'actions'=>array('uploaded'),
-//                        'users'=>array('@'),
-//                )
-//            );
-//	}
         
         /**
          * A request to initialize a Basiin transaction
@@ -135,7 +112,7 @@ class ImageController extends Controller
                 $image->GDImageData = $im;
                 if ($metadata){
                     if (isset($metadata->flashRewindUrl)&&$metadata->description)
-                        $metadata->description.='\\n\\nsource: '.$metadata->flashRewindUrl;
+                        $metadata->description.='\n\nsource: '.$metadata->flashRewindUrl;
                     else if(isset($metadata->flashRewindUrl))
                         $metadata->description ='source: '.$metadata->flashRewindUrl;
                     
@@ -167,30 +144,5 @@ class ImageController extends Controller
             
 	}
 
-	// Uncomment the following methods and override them if needed
-	/*
-	public function filters()
-	{
-		// return the filter configuration for this controller, e.g.:
-		return array(
-			'inlineFilterName',
-			array(
-				'class'=>'path.to.FilterClass',
-				'propertyName'=>'propertyValue',
-			),
-		);
-	}
 
-	public function actions()
-	{
-		// return external action classes, e.g.:
-		return array(
-			'action1'=>'path.to.ActionClass',
-			'action2'=>array(
-				'class'=>'path.to.AnotherActionClass',
-				'propertyName'=>'propertyValue',
-			),
-		);
-	}
-	*/
 }

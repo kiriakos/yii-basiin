@@ -101,7 +101,12 @@ var imageCrawler = {
             {
                 var url = $(els[i]).css('backgroundImage');
                 if(url != 'none' && url !='' && url != false)
-                    _createIfUnique(url.match(/url\((.*)\)/i)[1]);
+                    try{
+                        _createIfUnique(url.match(/url\((.*)\)/i)[1]);
+                    }catch (e){
+                        console.log("Failed image extraction from background style. url given: "+ url);
+                        console.log(e);
+                    }
                 
             }
 
