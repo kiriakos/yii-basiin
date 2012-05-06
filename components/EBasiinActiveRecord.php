@@ -14,5 +14,19 @@ class EBasiinActiveRecord extends CActiveRecord {
             return Yii::createComponent($db);
         }
 
+        /**
+         *  Propagate the ::model() behavior
+         *
+         * taken from
+         *  http://www.yiiframework.com/doc/api/1.1/CActiveRecord#model-detail
+         *
+         * @param Class $className
+         * @return CActiveRecord
+         */
+        public static function model($className=__CLASS__)
+        {
+            return parent::model($className);
+        }
+
 }
 ?>

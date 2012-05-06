@@ -2,5 +2,9 @@
 incomming/*
 received/*
 data/*
+
+#force ignore any bak files
+*.bak
+
 #started ignoriing the dtat folder aswell, since this is a tmpfs now, 
 #WARNING: changes to db may not be reflected in Basiin.db.sql be careful about mods
