@@ -1,0 +1,38 @@
+
+--------------------------------------------------------------------------------
+
+Bookmarklet for             
+Alien                       
+Site                        
+Infrastructure              Author: Kiriakos Krastillis (kindstudios.gr)
+INstalation                 Version: 0.1
+
+--------------------------------------------------------------------------------
+
+Any code in this project is GPLv3 unless otherwise stated.
+
+
+Yii-basiin is the yii-module-based impementation of the basiin bookmarklet 
+application toolset. It consists of clientside javsascript, a yii-module that 
+keeps track of sessions-auth-transactions-transfers and a passable preloader
+script inteded for use in the bookmarklet for fast (cached) instantiation of the
+bookmarklet UI.
+
+Basiin is intended as a small toolset to get you going writing rich Bookmarklet 
+applications without having to think too much about communication handling,
+security, messing up the resident site etc.
+
+NOTE: Basiin is NOT secure! It is designed to be as non existent as possible
+      but the truth is that from the moment you are transmitting data through
+      script tags it can be read by anybody having access to the dom. Still
+      basiin at least doesn't expose any functionality to the underlying web 
+      page, since it is completely contained inside its own closure. Two things 
+      that in th e future will make basiin more secure is the inclusion of 
+      crypto.js which will allow fully encrypted communication between the 
+      basiin application instance and the server and the future inclusion of 
+      CORS transfers for wherever it is possible.
+      
+
+This is the Yii module version of basiin.  If you are looking for a vanilla php 
+implementation for basiin; sorry I haven't written one.
+
